@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-success mb-0"><i class="bi bi-boxes"></i> Add Feed Inventory Record</h2>
+            <a href="{{ url_for('feed') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Inventory</a>
+        </div>
+        
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="{{ url_for('feed_add') }}">
+                    
+                    <h5 class="text-primary mb-3 border-bottom pb-2">General Details</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3"><label class="form-label text-muted">SI No</label><input type="text" class="form-control" name="si_no"></div>
+                        <div class="col-md-4"><label class="form-label text-muted">Date *</label><input type="date" class="form-control border-primary" name="date" required></div>
+                        <div class="col-md-5"><label class="form-label text-muted">Feed Name *</label><input type="text" class="form-control border-primary" name="feed_name" required></div>
+                    </div>
+
+                    <h5 class="text-primary mb-3 border-bottom pb-2">Inventory Quantities (KGS)</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4"><label class="form-label text-muted">Opening Qty</label><input type="number" step="0.01" class="form-control bg-light" name="opening_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-primary fw-semibold">Purchase Qty (+)</label><input type="number" step="0.01" class="form-control border-primary" name="purchase_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-success fw-semibold">Growing Qty (+)</label><input type="number" step="0.01" class="form-control border-success" name="growing_qty"></div>
+                        
+                        <div class="col-md-4"><label class="form-label text-muted text-danger fw-semibold">Consumption Qty (-)</label><input type="number" step="0.01" class="form-control border-danger" name="consumption_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-warning fw-semibold">Wastage Qty (-)</label><input type="number" step="0.01" class="form-control border-warning" name="wastage_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-dark fw-bold">Closing Stock (=)</label><input type="number" step="0.01" class="form-control border-dark shadow-sm" name="closing_stock"></div>
+                    </div>
+
+                    <h5 class="text-primary mb-3 border-bottom pb-2">Financials</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Purchase Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" class="form-control" name="purchase_amount">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Consumption Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" class="form-control" name="consumption_amount">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm"><i class="bi bi-save"></i> Save Feed Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

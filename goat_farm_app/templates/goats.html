@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-success mb-0"><i class="bi bi-card-list"></i> Goat Directory</h2>
+</div>
+
+<div class="row g-4">
+    {% for goat in goats %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 rounded-4 card-hover">
+            <div class="card-body text-center p-4">
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                    <i class="bi bi-tag-fill text-secondary fs-2"></i>
+                </div>
+                <h4 class="fw-bold mb-1">{{ goat.tag_number }}</h4>
+                <p class="text-muted small mb-3">Records: {{ goat.total_records }}</p>
+                
+                <div class="d-flex justify-content-between text-start small mb-2">
+                    <span class="text-muted">Net Profit:</span>
+                    <span class="fw-bold {% if (goat.total_income - goat.total_expense) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ₹{{ "%.2f"|format(goat.total_income - goat.total_expense) }}
+                    </span>
+                </div>
+                <a href="{{ url_for('goat_detail', tag_number=goat.tag_number) }}" class="btn btn-outline-primary btn-sm w-100 mt-2">View History</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <p class="text-muted fs-5">No goats registered yet.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-0"><i class="bi bi-heart-pulse text-danger"></i> Medicine & Vaccine Logs</h2>
+    <a href="{{ url_for('medicine_add') }}" class="btn btn-danger shadow-sm"><i class="bi bi-plus-circle"></i> Add Log</a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="{{ url_for('medicine') }}" class="row g-3 align-items-end">
+            <div class="col-md-9">
+                <label class="form-label text-muted">Search by Tag No</label>
+                <input type="text" name="tag_no" class="form-control" value="{{ request.args.get('tag_no', '') }}" placeholder="Search...">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-search"></i> Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="min-width: 1500px;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Sr#</th>
+                        <th>Tag No</th>
+                        <th>Breed Info</th>
+                        <th>Medicine 1 (Date / Name)</th>
+                        <th>Vaccine 1 (Date / Name)</th>
+                        <th>Medicine 2 (Date / Name)</th>
+                        <th>Medicine 3 (Date / Name)</th>
+                        <th>Vaccine 2 (Date / Name)</th>
+                        <th>Med Cost</th>
+                        <th>Vac Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="ps-4">{{ r.sr_no }}</td>
+                        <td class="fw-bold"><span class="badge bg-danger">{{ r.tag_no }}</span></td>
+                        <td><small>{{ r.breed }}<br>{{ r.breed_percent }}%</small></td>
+                        <td><small>{{ r.med1_date }}<br><strong>{{ r.med1_name }}</strong></small></td>
+                        <td><small>{{ r.vac1_date }}<br><strong>{{ r.vac1_name }}</strong></small></td>
+                        <td><small>{{ r.med2_date }}<br><strong>{{ r.med2_name }}</strong></small></td>
+                        <td><small>{{ r.med3_date }}<br><strong>{{ r.med3_name }}</strong></small></td>
+                        <td><small>{{ r.vac2_date }}<br><strong>{{ r.vac2_name }}</strong></small></td>
+                        <td>₹{{ r.medicine_amount }}</td>
+                        <td>₹{{ r.vaccine_amount }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-4 text-muted">No medical records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

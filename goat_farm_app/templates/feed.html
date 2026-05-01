@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-success mb-0"><i class="bi bi-box-seam"></i> Feed Inventory</h2>
+    <a href="{{ url_for('feed_add') }}" class="btn btn-success shadow-sm"><i class="bi bi-plus-circle"></i> Add Feed Record</a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="{{ url_for('feed') }}" class="row g-3 align-items-end">
+            <div class="col-md-9">
+                <label class="form-label text-muted">Search by Feed Name</label>
+                <input type="text" name="feed_name" class="form-control" value="{{ request.args.get('feed_name', '') }}" placeholder="Search...">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="min-width: 1500px;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">SI#</th>
+                        <th>Date</th>
+                        <th>Feed Name</th>
+                        <th>Opening Qty (KG)</th>
+                        <th>Purchased (KG)</th>
+                        <th>Growing (KG)</th>
+                        <th>Consumed (KG)</th>
+                        <th>Wastage (KG)</th>
+                        <th>Closing Stock (KG)</th>
+                        <th>Purchase Amt (₹)</th>
+                        <th>Consumption Amt (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="ps-4">{{ r.si_no }}</td>
+                        <td>{{ r.date }}</td>
+                        <td class="fw-bold text-success">{{ r.feed_name }}</td>
+                        <td>{{ r.opening_qty }}</td>
+                        <td class="text-primary">{{ r.purchase_qty }}</td>
+                        <td>{{ r.growing_qty }}</td>
+                        <td class="text-danger">{{ r.consumption_qty }}</td>
+                        <td class="text-warning">{{ r.wastage_qty }}</td>
+                        <td class="fw-bold bg-light">{{ r.closing_stock }}</td>
+                        <td>₹{{ "%.2f"|format(r.purchase_amount) }}</td>
+                        <td>₹{{ "%.2f"|format(r.consumption_amount) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11" class="text-center py-4 text-muted">No feed inventory records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

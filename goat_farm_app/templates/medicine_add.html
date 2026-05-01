@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-danger mb-0"><i class="bi bi-heart-pulse"></i> Add Medicine/Vaccine Log</h2>
+            <a href="{{ url_for('medicine') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Logs</a>
+        </div>
+        
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" action="{{ url_for('medicine_add') }}">
+                    
+                    <h5 class="text-danger mb-3 border-bottom pb-2">Goat Identification</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-2"><label class="form-label text-muted">Sr#</label><input type="text" class="form-control" name="sr_no"></div>
+                        <div class="col-md-4"><label class="form-label text-muted">Tag No *</label><input type="text" class="form-control border-danger" name="tag_no" required></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Breed</label><input type="text" class="form-control" name="breed"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Breed %</label><input type="text" class="form-control" name="breed_percent"></div>
+                    </div>
+
+                    <h5 class="text-danger mb-3 border-bottom pb-2">Medical Round 1</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3"><label class="form-label text-muted">Med 1 Date</label><input type="date" class="form-control" name="med1_date"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Med 1 Name</label><input type="text" class="form-control" name="med1_name"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Vac 1 Date</label><input type="date" class="form-control" name="vac1_date"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Vac 1 Name</label><input type="text" class="form-control" name="vac1_name"></div>
+                    </div>
+
+                    <h5 class="text-danger mb-3 border-bottom pb-2">Medical Round 2 & 3</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3"><label class="form-label text-muted">Med 2 Date</label><input type="date" class="form-control" name="med2_date"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Med 2 Name</label><input type="text" class="form-control" name="med2_name"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Med 3 Date</label><input type="date" class="form-control" name="med3_date"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Med 3 Name</label><input type="text" class="form-control" name="med3_name"></div>
+                    </div>
+                    
+                    <h5 class="text-danger mb-3 border-bottom pb-2">Additional Vaccine & Costs</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3"><label class="form-label text-muted">Vac 2 Date</label><input type="date" class="form-control" name="vac2_date"></div>
+                        <div class="col-md-3"><label class="form-label text-muted">Vac 2 Name</label><input type="text" class="form-control" name="vac2_name"></div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted">Medicine Amt</label>
+                            <div class="input-group"><span class="input-group-text">₹</span><input type="number" step="0.01" class="form-control" name="medicine_amount"></div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-muted">Vaccine Amt</label>
+                            <div class="input-group"><span class="input-group-text">₹</span><input type="number" step="0.01" class="form-control" name="vaccine_amount"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-danger btn-lg w-100 shadow-sm"><i class="bi bi-heart-pulse"></i> Save Medical Log</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

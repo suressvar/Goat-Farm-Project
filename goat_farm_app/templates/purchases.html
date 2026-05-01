@@ -1,0 +1,41 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class='d-flex justify-content-between align-items-center mb-4'>
+    <h2 class='fw-bold text-dark mb-0'>Purchase Records</h2>
+    <a href='{{ url_for('purchase_add') }}' class='btn btn-success shadow-sm rounded-pill px-4'><i class='bi bi-plus-lg'></i> Add Purchase</a>
+</div>
+
+<div class='card shadow-sm border-0 rounded-4 mb-4'>
+    <div class='card-body p-0'>
+        <div class='table-responsive'>
+            <table class='table table-hover align-middle mb-0'>
+                <thead class='table-light'>
+                    <tr>
+                        <th class='ps-4'>Date</th>
+                        <th>Seller Name</th>
+                        <th>Invoice</th>
+                        <th>Tag ID</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class='ps-4'>{{ r.purchase_date }}</td>
+                        <td>{{ r.seller_name }}</td>
+                        <td>{{ r.invoice_details }}</td>
+                        <td><span class='badge bg-light text-dark border'>{{ r.tag_id }}</span></td>
+                        <td class='fw-bold text-success'>?{{ '%.2f'|format(r.price) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan='5' class='text-center text-muted py-4'>No purchase records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
