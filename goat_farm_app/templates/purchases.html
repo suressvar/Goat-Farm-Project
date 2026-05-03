@@ -16,6 +16,7 @@
                         <th>Invoice</th>
                         <th>Tag ID</th>
                         <th>Price</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -25,11 +26,17 @@
                         <td>{{ r.seller_name }}</td>
                         <td>{{ r.invoice_details }}</td>
                         <td><span class='badge bg-light text-dark border'>{{ r.tag_id }}</span></td>
-                        <td class='fw-bold text-success'>?{{ '%.2f'|format(r.price) }}</td>
+                        <td class='fw-bold text-success'>₹{{ '%.2f'|format(r.price) }}</td>
+                        <td>
+                            <a href="{{ url_for('purchase_edit', id=r['id']) }}" class="btn btn-sm btn-warning me-2"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="{{ url_for('purchase_delete', id=r['id']) }}" style="display:inline;" onclick="return confirm('Delete this record?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan='5' class='text-center text-muted py-4'>No purchase records found.</td>
+                        <td colspan='6' class='text-center text-muted py-4'>No purchase records found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

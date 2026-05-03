@@ -1,0 +1,119 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-0"><i class="bi bi-capsule text-primary"></i> Vaccine Management</h2>
+    <a href="{{ url_for('vaccine_add') }}" class="btn btn-primary shadow-sm"><i class="bi bi-plus-circle"></i> Add Vaccine Record</a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="{{ url_for('vaccine') }}" class="row g-3 align-items-end">
+            <div class="col-md-9">
+                <label class="form-label text-muted">Search by Tag No or Serial No</label>
+                <input type="text" name="tag_no" class="form-control" value="{{ request.args.get('tag_no', '') }}" placeholder="Search...">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-secondary w-100"><i class="bi bi-search"></i> Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Sr#</th>
+                        <th>Tag No</th>
+                        <th>Vaccine Date</th>
+                        <th>Vaccine Name</th>
+                        <th class="text-primary">Amount Spent</th>
+                        <th>Additional Vaccines</th>
+                        <th>Additional Medicines</th>
+                        <th>Required Next</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td class="ps-4">{{ r.sr_no }}</td>
+                        <td><span class="badge bg-primary">{{ r.tag_no }}</span></td>
+                        <td><small>{{ r.vaccine_date }}</small></td>
+                        <td><strong>{{ r.vaccine_name }}</strong></td>
+                        <td><span class="text-primary fw-bold">₹{{ "%.2f"|format(r.amount_spent) if r.amount_spent else '0.00' }}</span></td>
+                        <td>
+                            {% if r.additional_vaccines %}
+                                <small>{{ r.additional_vaccines }}</small>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.additional_medicines %}
+                                <small>{{ r.additional_medicines }}</small>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.required_vaccines or r.required_medicines %}
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detailsModal{{ r.id }}" title="View details">
+                                    <i class="bi bi-info-circle"></i> View
+                                </button>
+                                <!-- Modal -->
+                                <div class="modal fade" id="detailsModal{{ r.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Required Items - Tag {{ r.tag_no }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                {% if r.required_vaccines %}
+                                                    <h6 class="fw-bold mb-2">Required Vaccines:</h6>
+                                                    <p class="text-muted">{{ r.required_vaccines }}</p>
+                                                {% endif %}
+                                                {% if r.required_medicines %}
+                                                    <h6 class="fw-bold mb-2">Required Medicines:</h6>
+                                                    <p class="text-muted">{{ r.required_medicines }}</p>
+                                                {% endif %}
+                                                {% if r.notes %}
+                                                    <h6 class="fw-bold mb-2">Notes:</h6>
+                                                    <p class="text-muted">{{ r.notes }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('vaccine_edit', id=r['id']) }}" class="btn btn-sm btn-warning me-2"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="{{ url_for('vaccine_delete', id=r['id']) }}" style="display:inline;" onclick="return confirm('Delete this record?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No vaccine records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="bi bi-info-circle"></i> <strong>Tip:</strong> Click "View" in the Required Next column to see details about required vaccines and medicines for upcoming vaccinations.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+{% endblock %}

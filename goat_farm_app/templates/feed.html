@@ -34,12 +34,17 @@
                         <th>Consumed (KG)</th>
                         <th>Wastage (KG)</th>
                         <th>Closing Stock (KG)</th>
+                        <th>Unit Cost (₹/KG)</th>
+                        <th>Closing Cost (₹)</th>
                         <th>Purchase Amt (₹)</th>
                         <th>Consumption Amt (₹)</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for r in records %}
+                    {% set unit_cost = (r.purchase_amount / r.purchase_qty) if r.purchase_qty else 0 %}
+                    {% set closing_cost = unit_cost * r.closing_stock if r.closing_stock else 0 %}
                     <tr>
                         <td class="ps-4">{{ r.si_no }}</td>
                         <td>{{ r.date }}</td>
@@ -50,12 +55,20 @@
                         <td class="text-danger">{{ r.consumption_qty }}</td>
                         <td class="text-warning">{{ r.wastage_qty }}</td>
                         <td class="fw-bold bg-light">{{ r.closing_stock }}</td>
+                        <td>₹{{ "%.2f"|format(unit_cost) }}</td>
+                        <td>₹{{ "%.2f"|format(closing_cost) }}</td>
                         <td>₹{{ "%.2f"|format(r.purchase_amount) }}</td>
                         <td>₹{{ "%.2f"|format(r.consumption_amount) }}</td>
+                        <td>
+                            <a href="{{ url_for('feed_edit', id=r['id']) }}" class="btn btn-sm btn-warning me-2"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="{{ url_for('feed_delete', id=r['id']) }}" style="display:inline;" onclick="return confirm('Delete this record?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="11" class="text-center py-4 text-muted">No feed inventory records found.</td>
+                        <td colspan="14" class="text-center py-4 text-muted">No feed inventory records found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

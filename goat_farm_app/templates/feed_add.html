@@ -20,13 +20,23 @@
 
                     <h5 class="text-primary mb-3 border-bottom pb-2">Inventory Quantities (KGS)</h5>
                     <div class="row g-3 mb-4">
-                        <div class="col-md-4"><label class="form-label text-muted">Opening Qty</label><input type="number" step="0.01" class="form-control bg-light" name="opening_qty"></div>
-                        <div class="col-md-4"><label class="form-label text-muted text-primary fw-semibold">Purchase Qty (+)</label><input type="number" step="0.01" class="form-control border-primary" name="purchase_qty"></div>
-                        <div class="col-md-4"><label class="form-label text-muted text-success fw-semibold">Growing Qty (+)</label><input type="number" step="0.01" class="form-control border-success" name="growing_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted">Opening Qty</label><input id="opening_qty" type="number" step="0.01" class="form-control bg-light" name="opening_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-primary fw-semibold">Purchase Qty (+)</label><input id="purchase_qty" type="number" step="0.01" class="form-control border-primary" name="purchase_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-success fw-semibold">Growing Qty (+)</label><input id="growing_qty" type="number" step="0.01" class="form-control border-success" name="growing_qty"></div>
                         
-                        <div class="col-md-4"><label class="form-label text-muted text-danger fw-semibold">Consumption Qty (-)</label><input type="number" step="0.01" class="form-control border-danger" name="consumption_qty"></div>
-                        <div class="col-md-4"><label class="form-label text-muted text-warning fw-semibold">Wastage Qty (-)</label><input type="number" step="0.01" class="form-control border-warning" name="wastage_qty"></div>
-                        <div class="col-md-4"><label class="form-label text-dark fw-bold">Closing Stock (=)</label><input type="number" step="0.01" class="form-control border-dark shadow-sm" name="closing_stock"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-danger fw-semibold">Consumption Qty (-)</label><input id="consumption_qty" type="number" step="0.01" class="form-control border-danger" name="consumption_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-muted text-warning fw-semibold">Wastage Qty (-)</label><input id="wastage_qty" type="number" step="0.01" class="form-control border-warning" name="wastage_qty"></div>
+                        <div class="col-md-4"><label class="form-label text-dark fw-bold">Closing Stock (=)</label><input id="closing_stock" type="number" step="0.01" class="form-control border-dark shadow-sm" name="closing_stock" readonly></div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <p class="small text-muted mb-1">Formula:</p>
+                            <p class="small text-muted">Closing Stock = Opening + Purchase + Growing - Consumption - Wastage</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted">Unit Cost</label>
+                            <div id="unit_cost_display" class="form-control bg-light">₹0.00 /kg</div>
+                        </div>
                     </div>
 
                     <h5 class="text-primary mb-3 border-bottom pb-2">Financials</h5>
@@ -42,14 +52,53 @@
                             <label class="form-label text-muted">Consumption Amount</label>
                             <div class="input-group">
                                 <span class="input-group-text">₹</span>
-                                <input type="number" step="0.01" class="form-control" name="consumption_amount">
+                                <input id="consumption_amount" type="number" step="0.01" class="form-control" name="consumption_amount">
                             </div>
+                            <p class="small text-muted mt-2">If left blank, consumption cost is calculated from unit cost.</p>
                         </div>
                     </div>
                     
                     <div class="col-12 mt-4">
                         <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm"><i class="bi bi-save"></i> Save Feed Entry</button>
                     </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const fields = ['opening_qty', 'purchase_qty', 'growing_qty', 'consumption_qty', 'wastage_qty', 'purchase_amount', 'consumption_amount'];
+                            const getVal = id => {
+                                const el = document.getElementById(id);
+                                if (!el) return 0;
+                                const value = parseFloat(el.value);
+                                return Number.isFinite(value) ? value : 0;
+                            };
+                            const closingInput = document.getElementById('closing_stock');
+                            const consumptionInput = document.getElementById('consumption_amount');
+                            const unitCostDisplay = document.getElementById('unit_cost_display');
+
+                            function computeFeedValues() {
+                                const opening = getVal('opening_qty');
+                                const purchase = getVal('purchase_qty');
+                                const growing = getVal('growing_qty');
+                                const consumption = getVal('consumption_qty');
+                                const wastage = getVal('wastage_qty');
+                                const purchaseAmount = getVal('purchase_amount');
+                                const closing = opening + purchase + growing - consumption - wastage;
+                                closingInput.value = closing.toFixed(2);
+
+                                const unitCost = purchase > 0 ? purchaseAmount / purchase : 0;
+                                unitCostDisplay.textContent = `₹${unitCost.toFixed(2)} /kg`;
+
+                                if (!document.getElementById('consumption_amount').value) {
+                                    consumptionInput.value = (consumption * unitCost).toFixed(2);
+                                }
+                            }
+
+                            fields.forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el) el.addEventListener('input', computeFeedValues);
+                            });
+                            computeFeedValues();
+                        });
+                    </script>
                 </form>
             </div>
         </div>

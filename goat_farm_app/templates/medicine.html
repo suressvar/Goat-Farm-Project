@@ -35,6 +35,7 @@
                         <th>Vaccine 2 (Date / Name)</th>
                         <th>Med Cost</th>
                         <th>Vac Cost</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,10 +51,16 @@
                         <td><small>{{ r.vac2_date }}<br><strong>{{ r.vac2_name }}</strong></small></td>
                         <td>₹{{ r.medicine_amount }}</td>
                         <td>₹{{ r.vaccine_amount }}</td>
+                        <td>
+                            <a href="{{ url_for('medicine_edit', id=r['id']) }}" class="btn btn-sm btn-warning me-2"><i class="bi bi-pencil"></i></a>
+                            <form method="POST" action="{{ url_for('medicine_delete', id=r['id']) }}" style="display:inline;" onclick="return confirm('Delete this record?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="10" class="text-center py-4 text-muted">No medical records found.</td>
+                        <td colspan="11" class="text-center py-4 text-muted">No medical records found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
