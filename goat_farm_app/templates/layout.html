@@ -88,7 +88,6 @@
                 <div>
                     <span class="eyebrow">Farm Operations</span>
                     <h1 class="page-title mb-1">{{ request.endpoint|replace('_', ' ')|title if request.endpoint else 'Dashboard' }}</h1>
-                    <p class="page-subtitle text-muted">A premium dashboard experience for smarter goat farm management.</p>
                 </div>
                 <div class="topbar-actions d-flex gap-2">
                     <a href="{{ url_for('dashboard') }}" class="btn btn-outline-success btn-sm">Refresh</a>
