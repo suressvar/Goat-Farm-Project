@@ -60,6 +60,32 @@
                             <td><strong>Address:</strong></td>
                             <td>{{ employee.address or '-' }}</td>
                         </tr>
+                        {% if employee.aadhar_no or employee.pan_no %}
+                        <tr class="border-top mt-2"><td colspan="2" class="pt-2 text-muted small fw-bold">IDENTITY DETAILS</td></tr>
+                        <tr>
+                            <td><strong>Aadhar:</strong></td>
+                            <td>{{ employee.aadhar_no or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PAN:</strong></td>
+                            <td>{{ employee.pan_no or '-' }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if employee.bank_name or employee.account_no %}
+                        <tr class="border-top mt-2"><td colspan="2" class="pt-2 text-muted small fw-bold">BANK DETAILS</td></tr>
+                        <tr>
+                            <td><strong>Bank:</strong></td>
+                            <td>{{ employee.bank_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Account:</strong></td>
+                            <td>{{ employee.account_no or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IFSC:</strong></td>
+                            <td>{{ employee.ifsc_code or '-' }}</td>
+                        </tr>
+                        {% endif %}
                     </table>
                 </div>
             </div>

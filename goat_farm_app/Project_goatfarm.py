@@ -151,6 +151,8 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+        add_column("feed_inventory", "purchase_id", "INTEGER")
+
         conn.execute('''
             CREATE TABLE IF NOT EXISTS medicine_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -406,10 +408,10 @@ def dashboard():
         searched_goat = db.execute("SELECT * FROM master_records WHERE tag_no = ?", (search_q.strip(),)).fetchone()
         
         # General list search
-        goats = db.execute("SELECT * FROM master_records WHERE tag_no LIKE ? OR breed LIKE ? ORDER BY purchase_date DESC", 
+        goats = db.execute("SELECT * FROM master_records WHERE tag_no LIKE ? OR breed LIKE ? ORDER BY id ASC", 
                           (f"%{search_q}%", f"%{search_q}%")).fetchall()
     else:
-        goats = db.execute("SELECT * FROM master_records ORDER BY id DESC LIMIT 10").fetchall()
+        goats = db.execute("SELECT * FROM master_records ORDER BY id ASC LIMIT 10").fetchall()
         
     return render_template('dashboard.html', 
         income=income, expense=expense, profit=profit, 
@@ -521,17 +523,29 @@ def delete_record(id):
 def goats():
     db = get_db()
     
-    # Get all unique tag numbers and their summary
+    # Get all goats from master records and their financial summary
     goats_summary = db.execute('''
-        SELECT tag_number, 
-               MIN(date) as first_record,
-               MAX(date) as last_record,
-               COUNT(*) as total_records,
-               SUM(CASE WHEN category = 'income' THEN amount ELSE 0 END) as total_income,
-               SUM(CASE WHEN category = 'expense' THEN amount ELSE 0 END) as total_expense
-        FROM goats_data
-        GROUP BY tag_number
-        ORDER BY tag_number ASC
+        WITH AllRecords AS (
+            SELECT tag_number as tag_no, date, category, amount FROM goats_data
+            UNION ALL
+            SELECT tag_id as tag_no, date_of_sale as date, 'income' as category, sold_price as amount FROM sales_records WHERE date_of_sale IS NOT NULL
+            UNION ALL
+            SELECT tag_no, COALESCE(med1_date, vac1_date) as date, 'expense' as category, IFNULL(medicine_amount, 0) + IFNULL(vaccine_amount, 0) as amount FROM medicine_records WHERE (med1_date IS NOT NULL OR vac1_date IS NOT NULL)
+            UNION ALL
+            SELECT tag_id as tag_no, expired_date as date, 'expense' as category, IFNULL(current_value, 0) as amount FROM mortality_records WHERE expired_date IS NOT NULL
+            UNION ALL
+            SELECT tag_id as tag_no, insurance_claim_date as date, 'income' as category, IFNULL(claim_amount, 0) as amount FROM mortality_records WHERE insurance_claim_date IS NOT NULL
+            UNION ALL
+            SELECT tag_no, purchase_date as date, 'expense' as category, IFNULL(purchase_amount, 0) as amount FROM master_records WHERE purchase_date IS NOT NULL
+        )
+        SELECT m.tag_no as tag_number, 
+               COUNT(a.amount) as total_records,
+               IFNULL(SUM(CASE WHEN a.category = 'income' THEN a.amount ELSE 0 END), 0) as total_income,
+               IFNULL(SUM(CASE WHEN a.category = 'expense' THEN a.amount ELSE 0 END), 0) as total_expense
+        FROM master_records m
+        LEFT JOIN AllRecords a ON m.tag_no = a.tag_no
+        GROUP BY m.tag_no
+        ORDER BY CAST(m.tag_no AS INTEGER) ASC
     ''').fetchall()
     
     return render_template('goats.html', goats=goats_summary)
@@ -601,10 +615,10 @@ def master():
     db = get_db()
     tag_search = request.args.get('tag_no', '')
     if tag_search:
-        records = db.execute('SELECT * FROM master_records WHERE tag_no LIKE ? OR si_no LIKE ? ORDER BY id DESC', 
+        records = db.execute('SELECT * FROM master_records WHERE tag_no LIKE ? OR si_no LIKE ? ORDER BY id ASC', 
              (f"%{tag_search}%", f"%{tag_search}%")).fetchall()
     else:
-        records = db.execute('SELECT * FROM master_records ORDER BY id DESC').fetchall()
+        records = db.execute('SELECT * FROM master_records ORDER BY id ASC').fetchall()
     return render_template('master.html', records=records)
 
 @app.route('/sales_add', methods=['GET', 'POST'])
@@ -1194,6 +1208,10 @@ def purchase_edit(id):
     
     if request.method == 'POST':
         f = request.form
+        # Get old tag_id before update
+        old_record = db.execute('SELECT tag_id FROM purchases WHERE id=?', (id,)).fetchone()
+        old_tag_id = old_record['tag_id'] if old_record else None
+        
         db.execute('''
             UPDATE purchases SET 
             seller_name = ?, invoice_details = ?, purchase_date = ?, tag_id = ?, price = ? WHERE id = ?
@@ -1201,8 +1219,16 @@ def purchase_edit(id):
             f.get('seller_name'), f.get('invoice_details'), f.get('purchase_date'),
             f.get('tag_id'), f.get('price'), id
         ))
+        
+        # Update corresponding master record if it exists
+        if old_tag_id:
+            db.execute('''UPDATE master_records 
+                         SET tag_no=?, purchase_date=?, purchase_amount=? 
+                         WHERE tag_no=?''', 
+                      (f.get('tag_id'), f.get('purchase_date'), f.get('price'), old_tag_id))
+        
         db.commit()
-        flash('Purchase record updated successfully!', 'success')
+        flash('Purchase record and Master Record updated successfully!', 'success')
         return redirect(url_for('purchases'))
     
     return render_template('purchase_edit.html', record=record)
@@ -1210,9 +1236,17 @@ def purchase_edit(id):
 @app.route('/purchase_delete/<int:id>', methods=['POST'])
 def purchase_delete(id):
     db = get_db()
-    db.execute('DELETE FROM purchases WHERE id = ?', (id,))
-    db.commit()
-    flash('Purchase record deleted successfully!', 'success')
+    # Get tag_id before deletion to clean up master_records
+    record = db.execute('SELECT tag_id FROM purchases WHERE id=?', (id,)).fetchone()
+    if record:
+        tag_id = record['tag_id']
+        db.execute('DELETE FROM purchases WHERE id = ?', (id,))
+        # Also remove from master_records to keep data clean
+        db.execute('DELETE FROM master_records WHERE tag_no = ?', (tag_id,))
+        db.commit()
+        flash('Purchase and corresponding Master Record deleted successfully!', 'success')
+    else:
+        flash('Record not found.', 'danger')
     return redirect(url_for('purchases'))
 
 @app.route('/health')
@@ -1294,21 +1328,22 @@ def purchase_feed():
         feed_name = f.get('feed_name')
         
         # 1. Log purchase
-        db.execute('''
+        cursor = db.execute('''
             INSERT INTO feed_purchases (
                 feed_name, quantity, unit, cost, purchase_date, supplier
             ) VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             feed_name, qty, f.get('unit'), cost, f.get('purchase_date'), f.get('supplier')
         ))
+        purchase_id = cursor.lastrowid
         
         # 2. Update feed inventory
         today = f.get('purchase_date')
         
         db.execute('''
-            INSERT INTO feed_inventory (feed_name, purchased_qty, closing_stock, total_cost, purchase_date)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (feed_name, qty, qty, cost, today))
+            INSERT INTO feed_inventory (feed_name, purchased_qty, closing_stock, total_cost, purchase_date, purchase_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (feed_name, qty, qty, cost, today, purchase_id))
             
         db.commit()
         flash('Feed purchased and inventory updated!', 'success')
@@ -1350,6 +1385,76 @@ def purchase_vaccine():
         flash('Vaccine purchased successfully!', 'success')
         return redirect(url_for('purchases'))
     return render_template('purchase_vaccine.html')
+
+@app.route('/feed_purchase_edit/<int:id>', methods=['GET', 'POST'])
+def feed_purchase_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM feed_purchases WHERE id = ?', (id,)).fetchone()
+    if request.method == 'POST':
+        f = request.form
+        db.execute('''UPDATE feed_purchases SET feed_name=?, quantity=?, unit=?, cost=?, purchase_date=?, supplier=? WHERE id=?''',
+            (f.get('feed_name'), f.get('quantity'), f.get('unit'), f.get('cost'), f.get('purchase_date'), f.get('supplier'), id))
+        
+        # Update linked inventory
+        db.execute('''UPDATE feed_inventory SET feed_name=?, purchased_qty=?, closing_stock=?, total_cost=?, purchase_date=? WHERE purchase_id=?''',
+            (f.get('feed_name'), f.get('quantity'), f.get('quantity'), f.get('cost'), f.get('purchase_date'), id))
+        
+        db.commit()
+        flash('Feed purchase and Inventory updated successfully!', 'success')
+        return redirect(url_for('purchases'))
+    return render_template('generic_purchase_edit.html', record=record, p_type='feed')
+
+@app.route('/feed_purchase_delete/<int:id>', methods=['POST'])
+def feed_purchase_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM feed_purchases WHERE id = ?', (id,))
+    # Also delete linked inventory
+    db.execute('DELETE FROM feed_inventory WHERE purchase_id = ?', (id,))
+    db.commit()
+    flash('Feed purchase and linked Inventory record deleted!', 'success')
+    return redirect(url_for('purchases'))
+
+@app.route('/med_purchase_edit/<int:id>', methods=['GET', 'POST'])
+def med_purchase_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM medicine_purchases WHERE id = ?', (id,)).fetchone()
+    if request.method == 'POST':
+        f = request.form
+        db.execute('''UPDATE medicine_purchases SET medicine_name=?, dose_unit=?, quantity=?, cost=?, purchase_date=?, supplier=? WHERE id=?''',
+            (f.get('medicine_name'), f.get('dose_unit'), f.get('quantity'), f.get('cost'), f.get('purchase_date'), f.get('supplier'), id))
+        db.commit()
+        flash('Medicine purchase updated successfully!', 'success')
+        return redirect(url_for('purchases'))
+    return render_template('generic_purchase_edit.html', record=record, p_type='med')
+
+@app.route('/med_purchase_delete/<int:id>', methods=['POST'])
+def med_purchase_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM medicine_purchases WHERE id = ?', (id,))
+    db.commit()
+    flash('Medicine purchase deleted!', 'success')
+    return redirect(url_for('purchases'))
+
+@app.route('/vac_purchase_edit/<int:id>', methods=['GET', 'POST'])
+def vac_purchase_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM vaccine_purchases WHERE id = ?', (id,)).fetchone()
+    if request.method == 'POST':
+        f = request.form
+        db.execute('''UPDATE vaccine_purchases SET vaccine_name=?, quantity=?, cost=?, purchase_date=?, supplier=? WHERE id=?''',
+            (f.get('vaccine_name'), f.get('quantity'), f.get('cost'), f.get('purchase_date'), f.get('supplier'), id))
+        db.commit()
+        flash('Vaccine purchase updated successfully!', 'success')
+        return redirect(url_for('purchases'))
+    return render_template('generic_purchase_edit.html', record=record, p_type='vac')
+
+@app.route('/vac_purchase_delete/<int:id>', methods=['POST'])
+def vac_purchase_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM vaccine_purchases WHERE id = ?', (id,))
+    db.commit()
+    flash('Vaccine purchase deleted!', 'success')
+    return redirect(url_for('purchases'))
 
 @app.route('/farm_settings', methods=['GET', 'POST'])
 def farm_settings():
@@ -1688,7 +1793,20 @@ def init_employee_tables():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL, role TEXT, phone TEXT, address TEXT,
             join_date DATE, wage_type TEXT, wage_rate REAL DEFAULT 0,
-            status TEXT DEFAULT 'Active', notes TEXT)''')
+            status TEXT DEFAULT 'Active', notes TEXT,
+            aadhar_no TEXT, pan_no TEXT, bank_name TEXT, account_no TEXT, ifsc_code TEXT)''')
+        
+        # Use add_column to update existing tables
+        def add_col(table, col, typ):
+            try:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+            except sqlite3.OperationalError: pass
+
+        add_col("employees", "aadhar_no", "TEXT")
+        add_col("employees", "pan_no", "TEXT")
+        add_col("employees", "bank_name", "TEXT")
+        add_col("employees", "account_no", "TEXT")
+        add_col("employees", "ifsc_code", "TEXT")
         conn.execute('''CREATE TABLE IF NOT EXISTS employee_wages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             employee_id INTEGER UNIQUE, daily_wage REAL DEFAULT 0,
@@ -1767,9 +1885,12 @@ def employee_add():
     if request.method == 'POST':
         f = request.form
         db = get_db()
-        db.execute('INSERT INTO employees (name, role, phone, address, join_date, wage_type, wage_rate, status, notes) VALUES (?,?,?,?,?,?,?,?,?)',
+        db.execute('''INSERT INTO employees (name, role, phone, address, join_date, wage_type, wage_rate, status, notes, 
+                                             aadhar_no, pan_no, bank_name, account_no, ifsc_code) 
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (f.get('name'), f.get('role'), f.get('phone'), f.get('address'), f.get('joining_date'),
-             f.get('wage_type'), f.get('wage_rate', 0), 'Active', f.get('notes')))
+             f.get('wage_type'), f.get('wage_rate', 0), 'Active', f.get('notes'),
+             f.get('aadhar_no'), f.get('pan_no'), f.get('bank_name'), f.get('account_no'), f.get('ifsc_code')))
         db.commit()
         flash('Employee added!', 'success')
         return redirect(url_for('employees'))
@@ -1780,9 +1901,11 @@ def employee_edit(emp_id):
     db = get_db()
     if request.method == 'POST':
         f = request.form
-        db.execute('UPDATE employees SET name=?, role=?, phone=?, address=?, join_date=?, wage_type=?, wage_rate=?, status=?, notes=? WHERE id=?',
+        db.execute('''UPDATE employees SET name=?, role=?, phone=?, address=?, join_date=?, wage_type=?, wage_rate=?, status=?, notes=?,
+                                           aadhar_no=?, pan_no=?, bank_name=?, account_no=?, ifsc_code=? WHERE id=?''',
             (f.get('name'), f.get('role'), f.get('phone'), f.get('address'), f.get('joining_date'),
-             f.get('wage_type'), f.get('wage_rate', 0), f.get('status'), f.get('notes'), emp_id))
+             f.get('wage_type'), f.get('wage_rate', 0), f.get('status'), f.get('notes'),
+             f.get('aadhar_no'), f.get('pan_no'), f.get('bank_name'), f.get('account_no'), f.get('ifsc_code'), emp_id))
         db.commit()
         flash('Employee updated!', 'success')
         return redirect(url_for('employees'))
@@ -1808,8 +1931,6 @@ def employee_delete(emp_id):
     flash('Employee deleted.', 'success')
     return redirect(url_for('employees'))
 
-
-# ── ATTENDANCE ──────────────────────────────────────────────────────────────────
 
 # ── ATTENDANCE ──────────────────────────────────────────────────────────────────
 @app.route('/attendance')
@@ -1875,6 +1996,8 @@ def salary_calculate():
         computed = 0
         if wage_type == 'Monthly':
             computed = (wage_rate / 30.0) * present
+        elif wage_type == 'Weekly':
+            computed = (wage_rate / 7.0) * present
         elif wage_type == 'Daily':
             computed = wage_rate * present
             
@@ -2088,50 +2211,100 @@ def pnl():
     sales_data = []
     expense_data = []
     profit_data = []
+    cash_flow_data = []
+    cumulative_cash = 0
     
     total_sales_yr = 0
     total_expenses_yr = 0
     
+    # Advanced Breakdown Dictionaries
+    revenue_breakdown = {
+        'goat_sales': 0, 'milk_sales': 0, 'breeding': 0,
+        'manure': 0, 'online': 0, 'subsidies': 0
+    }
+    
+    expense_breakdown = {
+        'feed': 0, 'vet': 0, 'vaccine': 0, 'elec_water': 0,
+        'salaries': 0, 'transport': 0, 'maint': 0, 'rent': 0,
+        'insurance': 0, 'misc': 0
+    }
+    
     for m in months:
         ym = f"{year}-{m}"
         
-        # Income (Sales)
-        sales = db.execute('''SELECT SUM(sold_price) FROM sales_records WHERE strftime('%Y-%m', date_of_sale) = ?''', (ym,)).fetchone()[0] or 0
+        # --- REVENUE ---
+        goat_sales = db.execute('''SELECT SUM(sold_price) FROM sales_records WHERE strftime('%Y-%m', date_of_sale) = ?''', (ym,)).fetchone()[0] or 0
+        milk_sales = db.execute('''SELECT SUM(amount) FROM finances WHERE type='Income' AND category='Milk Sales' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        breeding = db.execute('''SELECT SUM(amount) FROM finances WHERE type='Income' AND category='Breeding Income' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        manure = db.execute('''SELECT SUM(amount) FROM finances WHERE type='Income' AND category='Organic Manure Sales' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        online = db.execute('''SELECT SUM(amount) FROM finances WHERE type='Income' AND category='Online Marketplace Income' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        subsidies = db.execute('''SELECT SUM(amount) FROM finances WHERE type='Income' AND category='Government Subsidies' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
         
-        # Expenses
-        # 1. General Expenses (from expenses table, approved only)
-        gen_exp = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        month_revenue = goat_sales + milk_sales + breeding + manure + online + subsidies
         
-        # 2. Goat Purchases
-        goat_purchases = db.execute('''SELECT SUM(purchase_amount) FROM master_records WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        revenue_breakdown['goat_sales'] += goat_sales
+        revenue_breakdown['milk_sales'] += milk_sales
+        revenue_breakdown['breeding'] += breeding
+        revenue_breakdown['manure'] += manure
+        revenue_breakdown['online'] += online
+        revenue_breakdown['subsidies'] += subsidies
         
-        # 3. Feed Purchases (from feed_inventory)
-        feed_purchases = db.execute('''SELECT SUM(total_cost) FROM feed_inventory WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        # --- EXPENSES ---
+        feed = db.execute('''SELECT SUM(total_cost) FROM feed_inventory WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vet = db.execute('''SELECT SUM(cost) FROM medicine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vaccine = db.execute('''SELECT SUM(cost) FROM vaccine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
         
-        # 4. Medicine Purchases (from medicine_purchases)
-        med_purchases = db.execute('''SELECT SUM(cost) FROM medicine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        elec_water = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category='Electricity and Water' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        transport = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category='Transport' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        rent = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category='Farm Rent' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        insurance = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category='Insurance' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
+        misc = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category NOT IN ('Electricity and Water', 'Transport', 'Farm Rent', 'Insurance') AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
         
-        # 5. Vaccine Purchases (from vaccine_purchases)
-        vac_purchases = db.execute('''SELECT SUM(cost) FROM vaccine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
-        
-        # 6. Maintenance (from equipment_services)
+        salaries = db.execute('''SELECT SUM(net_salary) FROM salary_payments WHERE year = ? AND month = ?''', (year, int(m))).fetchone()[0] or 0
         maint = db.execute('''SELECT SUM(service_cost) FROM equipment_services WHERE strftime('%Y-%m', service_date) = ?''', (ym,)).fetchone()[0] or 0
         
-        # 7. Salaries (from salary_payments)
-        salaries = db.execute('''SELECT SUM(net_salary) FROM salary_payments WHERE year = ? AND month = ?''', (year, int(m))).fetchone()[0] or 0
+        month_expense = feed + vet + vaccine + elec_water + transport + rent + insurance + misc + salaries + maint
         
-        total_exp = gen_exp + goat_purchases + feed_purchases + med_purchases + vac_purchases + maint + salaries
+        expense_breakdown['feed'] += feed
+        expense_breakdown['vet'] += vet
+        expense_breakdown['vaccine'] += vaccine
+        expense_breakdown['elec_water'] += elec_water
+        expense_breakdown['salaries'] += salaries
+        expense_breakdown['transport'] += transport
+        expense_breakdown['maint'] += maint
+        expense_breakdown['rent'] += rent
+        expense_breakdown['insurance'] += insurance
+        expense_breakdown['misc'] += misc
         
-        sales_data.append(sales)
-        expense_data.append(total_exp)
-        profit_data.append(sales - total_exp)
+        profit = month_revenue - month_expense
+        cumulative_cash += profit
         
-        total_sales_yr += sales
-        total_expenses_yr += total_exp
+        sales_data.append(month_revenue)
+        expense_data.append(month_expense)
+        profit_data.append(profit)
+        cash_flow_data.append(cumulative_cash)
         
+        total_sales_yr += month_revenue
+        total_expenses_yr += month_expense
+
+    net_profit = total_sales_yr - total_expenses_yr
+    profit_margin = (net_profit / total_sales_yr * 100) if total_sales_yr > 0 else 0
+    roi = (net_profit / total_expenses_yr * 100) if total_expenses_yr > 0 else 0
+    burn_rate = total_expenses_yr / 12
+    ebitda = net_profit
+    
+    active_goats = db.execute('''SELECT COUNT(*) FROM master_records WHERE status = 'Active' ''').fetchone()[0] or 1
+    rev_per_goat = total_sales_yr / active_goats
+    feed_per_goat = expense_breakdown['feed'] / active_goats
+
     return render_template('pnl.html', year=year, month_names=month_names,
                            sales_data=sales_data, expense_data=expense_data, profit_data=profit_data,
-                           total_sales_yr=total_sales_yr, total_expenses_yr=total_expenses_yr)
+                           cash_flow_data=cash_flow_data,
+                           total_sales_yr=total_sales_yr, total_expenses_yr=total_expenses_yr,
+                           revenue_breakdown=revenue_breakdown, expense_breakdown=expense_breakdown,
+                           net_profit=net_profit, profit_margin=profit_margin, roi=roi,
+                           rev_per_goat=rev_per_goat, feed_per_goat=feed_per_goat,
+                           burn_rate=burn_rate, ebitda=ebitda)
 
 # ── EQUIPMENT ──────────────────────────────────────────────────────────────────
 @app.route('/equipment')
@@ -2158,9 +2331,9 @@ def equipment_add():
     if request.method == 'POST':
         f = request.form
         db = get_db()
-        db.execute('INSERT INTO equipment (name, type, purchase_date, purchase_cost, supplier, status, notes) VALUES (?,?,?,?,?,?,?)',
-            (f.get('equipment_name'), f.get('type'), f.get('purchase_date'), f.get('purchase_cost'),
-             f.get('supplier'), f.get('condition_status'), f.get('notes')))
+        db.execute('INSERT INTO equipment (name, equipment_name, type, purchase_date, purchase_cost, supplier, status, notes, assigned_employee, service_due_date) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            (f.get('equipment_name'), f.get('equipment_name'), f.get('type'), f.get('purchase_date'), f.get('purchase_cost'),
+             f.get('supplier'), f.get('condition_status'), f.get('notes'), f.get('assigned_employee'), f.get('service_due_date')))
         db.commit()
         flash('Equipment added!', 'success')
         return redirect(url_for('equipment'))
@@ -2171,14 +2344,22 @@ def equipment_edit(id):
     db = get_db()
     if request.method == 'POST':
         f = request.form
-        db.execute('UPDATE equipment SET name=?, type=?, purchase_date=?, purchase_cost=?, supplier=?, status=?, notes=? WHERE id=?',
-            (f.get('equipment_name'), f.get('type'), f.get('purchase_date'), f.get('purchase_cost'),
-             f.get('supplier'), f.get('condition_status'), f.get('notes'), id))
+        db.execute('UPDATE equipment SET name=?, equipment_name=?, type=?, purchase_date=?, purchase_cost=?, supplier=?, status=?, notes=?, assigned_employee=?, service_due_date=? WHERE id=?',
+            (f.get('equipment_name'), f.get('equipment_name'), f.get('type'), f.get('purchase_date'), f.get('purchase_cost'),
+             f.get('supplier'), f.get('condition_status'), f.get('notes'), f.get('assigned_employee'), f.get('service_due_date'), id))
         db.commit()
         flash('Equipment updated!', 'success')
         return redirect(url_for('equipment'))
     record = db.execute('SELECT * FROM equipment WHERE id=?', (id,)).fetchone()
     return render_template('equipment_edit.html', record=record)
+
+@app.route('/equipment_delete/<int:id>', methods=['POST'])
+def equipment_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM equipment WHERE id = ?', (id,))
+    db.commit()
+    flash('Equipment record deleted!', 'success')
+    return redirect(url_for('equipment_purchases'))
 
 @app.route('/equipment_detail/<int:id>')
 def equipment_detail(id):

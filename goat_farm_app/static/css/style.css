@@ -25,6 +25,17 @@
   box-sizing: border-box;
   font-family: var(--font-main);
 }
+
+input, textarea, select {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #374151 !important; /* Darker gray for placeholders */
+  font-weight: 600;
+  opacity: 1;
+}
 body {
   background: var(--body-bg);
   color: #2c3e50;
@@ -37,15 +48,16 @@ body {
   top: 0; left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--sidebar-bg);
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px) saturate(180%);
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 1000;
   transition: var(--transition);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--sidebar-shadow);
-  border-right: 1px solid #f0f0f0;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+  border-right: 1px solid rgba(255,255,255,0.3);
 }
 
 #sidebar::-webkit-scrollbar { width: 4px; }
@@ -171,13 +183,14 @@ body {
   left: var(--sidebar-width);
   right: 0;
   height: var(--topbar-height);
-  background: #fff;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   padding: 0 32px;
   z-index: 900;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.3);
 }
 
 #topbar .topbar-title {
@@ -221,16 +234,42 @@ body {
 
 /* ── Main Content ── */
 #main-content {
+  position: relative;
   margin-left: var(--sidebar-width);
   padding-top: var(--topbar-height);
   min-height: 100vh;
-  background: #ffffff;
+  background: #f8fafc !important; /* Premium Off-White */
 }
 
 .page-body {
   padding: 32px;
   max-width: 1400px;
   margin: 0 auto;
+}
+
+/* Page Header contrast on light bg */
+.page-header h2, h2, .container h2, .container-fluid h2 {
+    color: #1a2e1a !important; /* Dark Forest Green */
+    text-shadow: none;
+}
+.page-header p, p.text-muted, .container p.text-muted, .container-fluid p.text-muted {
+    color: #64748b !important; /* Slate 500 */
+}
+
+/* Card glass effect for light mode */
+.card {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0,0,0,0.02);
+  transition: var(--transition);
+}
+.card:hover {
+  transform: translateY(-5px);
+  background: #ffffff !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Cards ── */

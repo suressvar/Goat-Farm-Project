@@ -18,11 +18,21 @@
             </div>
 
             <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">EQUIPMENT TYPE</label>
+                <input type="text" name="type" class="form-control" value="{{ record.type or '' }}">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">SUPPLIER</label>
+                <input type="text" name="supplier" class="form-control" value="{{ record.supplier or '' }}">
+            </div>
+
+            <div class="col-md-6">
                 <label class="form-label fw-bold small text-muted">CONDITION</label>
                 <select name="condition_status" class="form-select">
-                    <option value="Good" {% if record.condition_status == 'Good' %}selected{% endif %}>Good</option>
-                    <option value="Needs Repair" {% if record.condition_status == 'Needs Repair' %}selected{% endif %}>Needs Repair</option>
-                    <option value="Out of Service" {% if record.condition_status == 'Out of Service' %}selected{% endif %}>Out of Service</option>
+                    <option value="Good" {% if record.status == 'Good' %}selected{% endif %}>Good</option>
+                    <option value="Needs Repair" {% if record.status == 'Needs Repair' %}selected{% endif %}>Needs Repair</option>
+                    <option value="Out of Service" {% if record.status == 'Out of Service' %}selected{% endif %}>Out of Service</option>
                 </select>
             </div>
             

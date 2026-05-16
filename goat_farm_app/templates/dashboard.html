@@ -3,10 +3,12 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header mb-4">
-    <h2 class="fw-800 text-dark mb-1">Farm Overview</h2>
-    <p class="text-muted mb-0">At-a-glance summary of your farm's performance and inventory.</p>
-</div>
+
+<div>
+    <div class="page-header mb-4 pt-2">
+        <h2 class="fw-800 text-dark mb-1">Farm Overview</h2>
+        <p class="text-muted mb-0">At-a-glance summary of your farm's performance and inventory.</p>
+    </div>
 
 <div class="row g-4 mb-4">
     <div class="col-md-4">
@@ -101,7 +103,7 @@
                                 <td><span class="badge bg-success-subtle text-success border border-success border-opacity-10">{{ g.tag_no }}</span></td>
                                 <td>{{ g.breed or 'N/A' }}</td>
                                 <td>
-                                    {% if g.gender == 'Male' %}
+                                    {% if g.gender|lower in ['male', 'm'] %}
                                         <span class="text-primary"><i class="bi bi-gender-male me-1"></i>Male</span>
                                     {% else %}
                                         <span class="text-danger"><i class="bi bi-gender-female me-1"></i>Female</span>
@@ -136,5 +138,6 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}

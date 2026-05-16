@@ -46,6 +46,7 @@
                                 <label class="form-label" for="wage_type">Wage Type</label>
                                 <select class="form-select" id="wage_type" name="wage_type">
                                     <option value="Daily" {% if record.wage_type == 'Daily' %}selected{% endif %}>Daily</option>
+                                    <option value="Weekly" {% if record.wage_type == 'Weekly' %}selected{% endif %}>Weekly</option>
                                     <option value="Monthly" {% if record.wage_type == 'Monthly' %}selected{% endif %}>Monthly</option>
                                 </select>
                             </div>
@@ -58,6 +59,32 @@
                         <div class="mb-3">
                             <label class="form-label" for="address">Address</label>
                             <textarea class="form-control" id="address" name="address" rows="3">{{ record.address or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Aadhar Number</label>
+                                <input type="text" name="aadhar_no" class="form-control" value="{{ record.aadhar_no or '' }}" placeholder="12-digit Aadhar No">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">PAN Number</label>
+                                <input type="text" name="pan_no" class="form-control" value="{{ record.pan_no or '' }}" placeholder="ABCDE1234F">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" name="bank_name" class="form-control" value="{{ record.bank_name or '' }}" placeholder="e.g. SBI, HDFC">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" name="account_no" class="form-control" value="{{ record.account_no or '' }}" placeholder="Bank Account No">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">IFSC Code</label>
+                                <input type="text" name="ifsc_code" class="form-control" value="{{ record.ifsc_code or '' }}" placeholder="SBIN0001234">
+                            </div>
                         </div>
 
                         <div class="row mb-3">
