@@ -18,25 +18,32 @@
                         <div class="mb-3">
                             <label for="farm_name" class="form-label fw-semibold">Farm Name</label>
                             <input type="text" class="form-control" id="farm_name" name="farm_name" 
-                                   value="{{ farm_info['farm_name'] if farm_info and farm_info['farm_name'] else 'Ranga Goat Farm' }}" placeholder="Enter farm name" required>
+                                   value="{{ settings['farm_name'] if settings else '' }}" placeholder="Enter farm name" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="farm_address" class="form-label fw-semibold">Farm Address</label>
-                            <textarea class="form-control" id="farm_address" name="farm_address" rows="2" 
-                                      placeholder="Enter complete address" required>{% if farm_info and farm_info['farm_address'] %}{{ farm_info['farm_address'] }}{% else %}Aandigounder Street, Pachapalayam, Perur{% endif %}</textarea>
+                            <label for="address" class="form-label fw-semibold">Farm Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="2" 
+                                      placeholder="Enter complete address" required>{{ settings['address'] if settings else '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label fw-semibold">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ settings['phone'] if settings else '' }}" placeholder="Enter contact number">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label fw-semibold">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ settings['email'] if settings else '' }}" placeholder="Enter email">
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="farm_city" class="form-label fw-semibold">City</label>
-                            <input type="text" class="form-control" id="farm_city" name="farm_city" 
-                                   value="{{ farm_info['farm_city'] if farm_info and farm_info['farm_city'] else 'Coimbatore 641010, Tamil Nadu' }}" placeholder="Enter city name" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="farm_phone" class="form-label fw-semibold">Phone Number</label>
-                            <input type="tel" class="form-control" id="farm_phone" name="farm_phone" 
-                                   value="{{ farm_info['farm_phone'] if farm_info else '' }}" placeholder="Enter contact number">
+                            <label for="gst_no" class="form-label fw-semibold">GST Number</label>
+                            <input type="text" class="form-control" id="gst_no" name="gst_no" 
+                                   value="{{ settings['gst_no'] if settings else '' }}" placeholder="Enter GSTIN">
                         </div>
 
                         <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">Bank Details</h5>
@@ -44,19 +51,20 @@
                         <div class="mb-3">
                             <label for="bank_name" class="form-label fw-semibold">Bank Name</label>
                             <input type="text" class="form-control" id="bank_name" name="bank_name" 
-                                   value="{{ farm_info['bank_name'] if farm_info else '' }}" placeholder="Enter bank name">
+                                   value="{{ settings['bank_name'] if settings else '' }}" placeholder="Enter bank name">
                         </div>
 
-                        <div class="mb-3">
-                            <label for="account_number" class="form-label fw-semibold">Account Number</label>
-                            <input type="text" class="form-control" id="account_number" name="account_number" 
-                                   value="{{ farm_info['account_number'] if farm_info else '' }}" placeholder="Enter account number">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="ifsc_code" class="form-label fw-semibold">IFSC Code</label>
-                            <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" 
-                                   value="{{ farm_info['ifsc_code'] if farm_info else '' }}" placeholder="Enter IFSC code">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="account_no" class="form-label fw-semibold">Account Number</label>
+                                <input type="text" class="form-control" id="account_no" name="account_no" 
+                                       value="{{ settings['account_no'] if settings else '' }}" placeholder="Enter account number">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ifsc_code" class="form-label fw-semibold">IFSC Code</label>
+                                <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" 
+                                       value="{{ settings['ifsc_code'] if settings else '' }}" placeholder="Enter IFSC code">
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2 mt-4">

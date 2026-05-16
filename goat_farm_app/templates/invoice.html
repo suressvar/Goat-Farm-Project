@@ -2,11 +2,10 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
-        <div class="col-12 d-flex flex-wrap gap-2 align-items-center">
-            <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer"></i> Print Invoice</button>
-            <a href="{{ url_for('generate_invoice_pdf', sales_id=sale['id']) }}" class="btn btn-success"><i class="bi bi-file-earmark-pdf"></i> Download as PDF</a>
-            <a href="{{ url_for('generate_invoice_txt', sales_id=sale['id']) }}" class="btn btn-outline-success"><i class="bi bi-file-earmark-text"></i> Download as TXT</a>
-            <a href="{{ url_for('sales') }}" class="btn btn-secondary ms-auto"><i class="bi bi-arrow-left"></i> Back to Sales</a>
+        <div class="col-12">
+            <button onclick="window.print()" class="btn btn-primary me-2"><i class="bi bi-printer"></i> Print Invoice</button>
+            <a href="{{ url_for('generate_invoice_txt', sales_id=sale['id']) }}" class="btn btn-success me-2"><i class="bi bi-file-earmark-text"></i> Download as TXT</a>
+            <a href="{{ url_for('generate_invoice') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Generator</a>
         </div>
     </div>
 
@@ -17,12 +16,15 @@
                 <div class="row mb-4 pb-4 border-bottom">
                     <div class="col-8">
                         <h3 class="fw-bold text-success mb-1">
-                            {% if farm_info and farm_info['farm_name'] %}{{ farm_info['farm_name'] }}{% else %}Ranga Goat Farm{% endif %}
+                            {% if farm_info %}{{ farm_info['farm_name'] }}{% else %}Goat Farm Manager{% endif %}
                         </h3>
                         <p class="text-muted mb-0 small">
-                            {% if farm_info and farm_info['farm_address'] %}{{ farm_info['farm_address'] }}{% else %}Aandigounder Street, Pachapalayam, Perur{% endif %}<br>
-                            {% if farm_info and farm_info['farm_city'] %}{{ farm_info['farm_city'] }}{% else %}Coimbatore 641010, Tamil Nadu{% endif %}<br>
-                            {% if farm_info and farm_info['farm_phone'] %}Phone: {{ farm_info['farm_phone'] }}{% endif %}
+                            {% if farm_info %}
+                                {{ farm_info['farm_address'] }}, {{ farm_info['farm_city'] }}<br>
+                                Phone: {{ farm_info['farm_phone'] }}
+                            {% else %}
+                                <em>Farm details not configured</em>
+                            {% endif %}
                         </p>
                     </div>
                     <div class="col-4 text-end">
@@ -43,12 +45,12 @@
                         </p>
                     </div>
                     <div class="col-6">
-                        {% if farm_info %}
+                        {% if farm_info and farm_info['bank_name'] %}
                         <h6 class="fw-bold text-dark mb-2">BANK DETAILS:</h6>
                         <p class="mb-1 small">
-                            {% if farm_info['bank_name'] %}<strong>Bank:</strong> {{ farm_info['bank_name'] }}<br>{% endif %}
-                            {% if farm_info['account_number'] %}<strong>Account:</strong> {{ farm_info['account_number'] }}<br>{% endif %}
-                            {% if farm_info['ifsc_code'] %}<strong>IFSC:</strong> {{ farm_info['ifsc_code'] }}{% endif %}
+                            <strong>Bank:</strong> {{ farm_info['bank_name'] }}<br>
+                            <strong>Account:</strong> {{ farm_info['account_number'] }}<br>
+                            <strong>IFSC:</strong> {{ farm_info['ifsc_code'] }}
                         </p>
                         {% endif %}
                     </div>
@@ -70,27 +72,19 @@
                             </tr>
                             <tr>
                                 <td><strong>Gender</strong></td>
-                                <td class="text-center">
-                                    {% if sale['gender'] %}{{ sale['gender'] }}{% elif goat and goat['gender'] %}{{ goat['gender'] }}{% else %}N/A{% endif %}
-                                </td>
+                                <td class="text-center">{{ sale['gender'] if sale['gender'] else (goat['gender'] if goat else 'N/A') }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Weight (kg)</strong></td>
-                                <td class="text-center">
-                                    {% if sale['weight'] %}{{ "%.2f"|format(sale['weight']) }}{% elif goat and goat['weight_kg'] %}{{ "%.2f"|format(goat['weight_kg']) }}{% else %}N/A{% endif %}
-                                </td>
+                                <td class="text-center">{{ "%.2f"|format(sale['weight']) if sale['weight'] else (goat['weight_kg'] if goat else 'N/A') }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Breed</strong></td>
-                                <td class="text-center">
-                                    {% if sale['breed'] %}{{ sale['breed'] }}{% elif goat and goat['breed'] %}{{ goat['breed'] }}{% else %}N/A{% endif %}
-                                </td>
+                                <td class="text-center">{{ sale['breed'] if sale['breed'] else (goat['breed'] if goat else 'N/A') }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Breed Percent</strong></td>
-                                <td class="text-center">
-                                    {% if sale['breed_percent'] %}{{ sale['breed_percent'] }}{% elif goat and goat['breed_percent'] %}{{ goat['breed_percent'] }}{% else %}N/A{% endif %}
-                                </td>
+                                <td class="text-center">{{ sale['breed_percent'] if sale['breed_percent'] else (goat['breed_percent'] if goat else 'N/A') }}</td>
                             </tr>
                         </tbody>
                     </table>

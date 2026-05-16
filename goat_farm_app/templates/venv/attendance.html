@@ -1,0 +1,134 @@
+{% extends 'layout.html' %}
+
+{% block page_title %}Attendance Management{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h2 class="fw-800 text-dark mb-1">Attendance Management</h2>
+        <p class="text-muted mb-0">Track and manage staff daily attendance and leave status.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Filter Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 h-100">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-700 mb-0">Filter by Date</h5>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <form method="GET" class="d-flex flex-column gap-3">
+                    <input type="date" class="form-control" name="date" value="{{ date_filter }}" id="dateInput">
+                    <button type="submit" class="btn btn-outline-success w-100">
+                        <i class="bi bi-search me-2"></i> Filter Records
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Card -->
+    <div class="col-lg-8">
+        <div class="card border-0">
+            <div class="card-header border-0 bg-transparent pt-4 px-4">
+                <h5 class="fw-700 mb-0">Mark Attendance</h5>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <form method="POST" action="{{ url_for('attendance_add') }}" class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-700 text-muted">EMPLOYEE</label>
+                        <select class="form-select" name="employee_id" required>
+                            <option value="">Select Employee</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}">{{ emp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-700 text-muted">DATE</label>
+                        <input type="date" class="form-control" name="date" id="todayDate" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-700 text-muted">STATUS</label>
+                        <select class="form-select" name="status" required>
+                            <option value="">Status</option>
+                            <option value="Present">Present</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Leave">Leave</option>
+                            <option value="Half Day">Half Day</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-700 text-muted">NOTES (OPTIONAL)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="notes" placeholder="e.g. Reason for leave or delay">
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-plus-lg me-2"></i> Mark
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Records Table -->
+<div class="card border-0 overflow-hidden">
+    <div class="card-header border-0 bg-transparent pt-4 px-4">
+        <h5 class="fw-700 mb-0">Attendance History</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>EMPLOYEE</th>
+                    <th>ROLE</th>
+                    <th>DATE</th>
+                    <th>STATUS</th>
+                    <th>NOTES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if records %}
+                    {% for rec in records %}
+                    <tr>
+                        <td>
+                            <div class="fw-800 text-dark">{{ rec.name }}</div>
+                            <div class="small text-muted">ID: {{ rec.employee_id }}</div>
+                        </td>
+                        <td><span class="small text-muted">{{ rec.role }}</span></td>
+                        <td>{{ rec.date }}</td>
+                        <td>
+                            {% if rec.status == 'Present' %}
+                            <span class="badge rounded-pill bg-success-subtle text-success border border-success border-opacity-10 px-3">Present</span>
+                            {% elif rec.status == 'Absent' %}
+                            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger border-opacity-10 px-3">Absent</span>
+                            {% elif rec.status == 'Leave' %}
+                            <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning border-opacity-10 px-3">Leave</span>
+                            {% else %}
+                            <span class="badge rounded-pill bg-info-subtle text-info border border-info border-opacity-10 px-3">{{ rec.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="small">{{ rec.notes or '-' }}</span></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                        <i class="bi bi-calendar2-x mb-2 d-block" style="font-size: 2rem; opacity: 0.2;"></i>
+                        No attendance records found for this date.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Set today's date as default
+document.getElementById('todayDate').valueAsDate = new Date();
+</script>
+{% endblock %}

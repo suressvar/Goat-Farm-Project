@@ -1,0 +1,144 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3"><i class="fas fa-chart-bar"></i> Attendance Summary Report</h1>
+        </div>
+    </div>
+
+    <!-- Month Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-9">
+                    <input type="month" class="form-control" name="month" value="{{ month }}" placeholder="Select month">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Attendance Statistics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h6 class="text-muted">Total Employees</h6>
+                        <h3 class="text-primary">{{ employees|length }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h6 class="text-muted">Average Present Days</h6>
+                        <h3 class="text-success">
+                            {% set total_present = namespace(value=0) %}
+                            {% for emp in employees %}
+                                {% set total_present.value = total_present.value + (emp.present_days or 0) %}
+                            {% endfor %}
+                            {% if employees|length > 0 %}
+                                {{ "{:.1f}".format(total_present.value / employees|length) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h6 class="text-muted">Average Absent Days</h6>
+                        <h3 class="text-danger">
+                            {% set total_absent = namespace(value=0) %}
+                            {% for emp in employees %}
+                                {% set total_absent.value = total_absent.value + (emp.absent_days or 0) %}
+                            {% endfor %}
+                            {% if employees|length > 0 %}
+                                {{ "{:.1f}".format(total_absent.value / employees|length) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Details -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Present Days</th>
+                        <th>Absent Days</th>
+                        <th>Leave Days</th>
+                        <th>Total Records</th>
+                        <th>Attendance %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if employees %}
+                        {% for emp in employees %}
+                        <tr>
+                            <td><strong>{{ emp.employee_id }}</strong></td>
+                            <td>{{ emp.name }}</td>
+                            <td>{{ emp.role }}</td>
+                            <td>
+                                <span class="badge bg-success">{{ emp.present_days or 0 }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-danger">{{ emp.absent_days or 0 }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">{{ emp.leave_days or 0 }}</span>
+                            </td>
+                            <td>{{ emp.total_records or 0 }}</td>
+                            <td>
+                                {% if emp.total_records and emp.total_records > 0 %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" style="width: {{ (emp.present_days / emp.total_records * 100)|int }}%">
+                                        {{ ((emp.present_days / emp.total_records * 100)|int) }}%
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox"></i> No attendance records found
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="alert alert-info mt-4" role="alert">
+        <h6 class="alert-heading">Legend</h6>
+        <p class="mb-0">
+            <span class="badge bg-success">Present</span> - Employee was present
+            <span class="badge bg-danger ms-2">Absent</span> - Employee was absent
+            <span class="badge bg-warning ms-2">Leave</span> - Employee was on leave
+        </p>
+    </div>
+</div>
+{% endblock %}

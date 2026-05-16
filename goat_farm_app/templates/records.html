@@ -23,6 +23,7 @@
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
+                    <th>S.No</th>
                     <th>Date</th>
                     <th>Tag Number</th>
                     <th>Category</th>
@@ -35,6 +36,7 @@
             <tbody>
                 {% for r in records %}
                 <tr>
+                    <td>{{ loop.index }}</td>
                     <td>{{ r.date }}</td>
                     <td><span class="badge bg-success">{{ r.tag_number }}</span></td>
                     <td><span class="badge {% if r.category == 'income' %}bg-success{% else %}bg-danger{% endif %}">{{ r.category }}</span></td>
@@ -49,7 +51,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No records found.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No records found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

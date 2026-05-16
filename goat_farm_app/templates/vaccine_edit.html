@@ -1,101 +1,72 @@
 {% extends 'layout.html' %}
+
+{% block page_title %}Edit Vaccine Record{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark mb-0"><i class="bi bi-pencil-square text-warning"></i> Edit Vaccine Record</h2>
-    <a href="{{ url_for('vaccine') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Vaccines</a>
+<div class="page-header mb-4">
+    <h2 class="fw-800 text-dark mb-1">Edit Vaccine Record</h2>
+    <p class="text-muted mb-0">Update the details of an existing vaccination record.</p>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4">
-                <form method="POST">
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Goat Information</h5>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="sr_no" class="form-label fw-semibold">Serial Number</label>
-                            <input type="text" class="form-control" id="sr_no" name="sr_no" placeholder="Enter SR No" value="{{ record['sr_no'] or '' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="tag_no" class="form-label fw-semibold">Tag Number <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="tag_no" name="tag_no" required placeholder="Enter goat tag number" value="{{ record['tag_no'] or '' }}">
-                        </div>
-                    </div>
-
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">Vaccine Details</h5>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="vaccine_date" class="form-label fw-semibold">Vaccination Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="vaccine_date" name="vaccine_date" required value="{{ record['vaccine_date'] or '' }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="vaccine_name" class="form-label fw-semibold">Vaccine Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="vaccine_name" name="vaccine_name" required placeholder="e.g., PPR, HS, Brucella" value="{{ record['vaccine_name'] or '' }}">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="amount_spent" class="form-label fw-semibold">Amount Spent (₹)</label>
-                        <input type="number" step="0.01" class="form-control" id="amount_spent" name="amount_spent" value="{{ record['amount_spent'] or '' }}">
-                    </div>
-
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">Additional Records</h5>
-
-                    <div class="mb-3">
-                        <label for="additional_vaccines" class="form-label fw-semibold">Additional Vaccines</label>
-                        <textarea class="form-control" id="additional_vaccines" name="additional_vaccines" rows="2" placeholder="List any additional vaccines...">{{ record['additional_vaccines'] or '' }}</textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="additional_medicines" class="form-label fw-semibold">Additional Medicines</label>
-                        <textarea class="form-control" id="additional_medicines" name="additional_medicines" rows="2" placeholder="List any additional medicines...">{{ record['additional_medicines'] or '' }}</textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="required_vaccines" class="form-label fw-semibold">Required Vaccines</label>
-                        <textarea class="form-control" id="required_vaccines" name="required_vaccines" rows="2" placeholder="List required vaccines...">{{ record['required_vaccines'] or '' }}</textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="required_medicines" class="form-label fw-semibold">Required Medicines</label>
-                        <textarea class="form-control" id="required_medicines" name="required_medicines" rows="2" placeholder="List required medicines...">{{ record['required_medicines'] or '' }}</textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="notes" class="form-label fw-semibold">Notes</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="Any additional notes...">{{ record['notes'] or '' }}</textarea>
-                    </div>
-
-                    <div class="d-grid gap-2 d-flex">
-                        <button type="submit" class="btn btn-warning btn-lg"><i class="bi bi-check-circle"></i> Update Record</button>
-                        <button type="button" class="btn btn-danger btn-lg" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash"></i> Delete</button>
-                    </div>
-                </form>
+<div class="card border-0">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('vaccine_edit', id=record.id) }}" class="row g-4">
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">SERIAL NUMBER</label>
+                <input type="text" name="sr_no" class="form-control" value="{{ record.sr_no }}">
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Confirm Delete</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">GOAT TAG NUMBER <span class="text-danger">*</span></label>
+                <input type="text" name="tag_no" class="form-control" list="goatTags" required value="{{ record.tag_no }}">
+                <datalist id="goatTags">
+                    {% for goat in goats %}
+                    <option value="{{ goat.tag_no }}">
+                    {% endfor %}
+                </datalist>
             </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this vaccine record? This action cannot be undone.</p>
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">VACCINE DATE <span class="text-danger">*</span></label>
+                <input type="date" name="vaccine_date" class="form-control" required value="{{ record.vaccine_date }}">
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form method="POST" action="{{ url_for('vaccine_delete', id=record['id']) }}" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">VACCINE NAME <span class="text-danger">*</span></label>
+                <input type="text" name="vaccine_name" class="form-control" required value="{{ record.vaccine_name }}">
             </div>
-        </div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">COST (₹) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="amount_spent" class="form-control" required value="{{ record.amount_spent }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">NEXT DUE DATE</label>
+                <input type="date" name="next_due_date" class="form-control" value="{{ record.next_due_date }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">ADDITIONAL VACCINES</label>
+                <input type="text" name="additional_vaccines" class="form-control" value="{{ record.additional_vaccines }}">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">ADDITIONAL MEDICINES</label>
+                <input type="text" name="additional_medicines" class="form-control" value="{{ record.additional_medicines }}">
+            </div>
+            
+            <div class="col-12">
+                <label class="form-label fw-bold small text-muted">NOTES / OBSERVATIONS</label>
+                <textarea name="notes" class="form-control" rows="3">{{ record.notes }}</textarea>
+            </div>
+            
+            <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">Update Vaccine Record</button>
+                <a href="{{ url_for('vaccine') }}" class="btn btn-light px-4 py-2 ms-2">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

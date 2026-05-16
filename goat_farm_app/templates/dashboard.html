@@ -1,226 +1,139 @@
 {% extends 'layout.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-7">
-        <h2 class="fw-bold text-dark mb-1">Welcome back, {{ session.get('username') }}! 👋</h2>
-        <p class="text-muted mb-0">Here is a quick snapshot of your Goat Farm's overall performance.</p>
-    </div>
-    <div class="col-md-5 mt-3 mt-md-0">
-        <form method="GET" action="{{ url_for('dashboard') }}" class="d-flex align-items-center justify-content-md-end gap-2 bg-white p-2 rounded-pill shadow-sm border">
-            <input type="date" name="start_date" class="form-control border-0 bg-transparent text-muted" value="{{ start_date }}" style="width: 140px;">
-            <span class="text-muted">to</span>
-            <input type="date" name="end_date" class="form-control border-0 bg-transparent text-muted" value="{{ end_date }}" style="width: 140px;">
-            <button type="submit" class="btn btn-success rounded-pill px-3"><i class="bi bi-funnel-fill"></i></button>
-        </form>
-    </div>
+<div class="page-header mb-4">
+    <h2 class="fw-800 text-dark mb-1">Farm Overview</h2>
+    <p class="text-muted mb-0">At-a-glance summary of your farm's performance and inventory.</p>
 </div>
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 text-center">
-                <h5 class="fw-bold mb-3">Quick Goat Detail Lookup</h5>
-                <form method="GET" action="{{ url_for('search') }}" class="d-flex justify-content-center mx-auto" style="max-width: 500px;">
-                    <div class="input-group input-group-lg shadow-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="Enter Tag Number..." required>
-                        <button class="btn btn-success px-4 fw-bold" type="submit">Search</button>
-                    </div>
-                </form>
-            </div>
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #2e7d32, #1b5e20);">
+            <i class="bi bi-heptagon-half stat-icon text-white-50"></i>
+            <div class="stat-label text-white-50">Total Active Goats</div>
+            <div class="stat-value text-white">{{ total_goats }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #0288d1, #01579b);">
+            <i class="bi bi-bug stat-icon text-white-50"></i>
+            <div class="stat-label text-white-50">Total Kids</div>
+            <div class="stat-value text-white">{{ total_kids }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="background: linear-gradient(135deg, #f57f17, #fbc02d);">
+            <i class="bi bi-people stat-icon text-white-50"></i>
+            <div class="stat-label text-white-50">Active Employees</div>
+            <div class="stat-value text-white">{{ total_employees }}</div>
         </div>
     </div>
 </div>
 
 <div class="row g-4 mb-5">
     <div class="col-md-4">
-        <div class="card bg-success text-white shadow-sm border-0 rounded-4 h-100 card-hover">
-            <div class="card-body p-4 position-relative overflow-hidden">
-                <i class="bi bi-cash-stack position-absolute opacity-25" style="font-size: 5rem; right: -10px; bottom: -20px;"></i>
-                <h6 class="card-title fw-semibold opacity-75 text-uppercase letter-spacing-1 mb-2">Total Net Income</h6>
-                <h2 class="display-6 fw-bold mb-0">₹{{ "%.2f"|format(income) }}</h2>
-                <div class="mt-3 small opacity-75"><i class="bi bi-arrow-up-circle"></i> Aggregated from all modules</div>
-            </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #43a047, #1b5e20);">
+            <i class="bi bi-cash-stack stat-icon text-white-50"></i>
+            <div class="stat-label text-white-50">Total Income</div>
+            <div class="stat-value text-white">₹{{ "%.2f"|format(income) }}</div>
+            <div class="stat-sub text-white-50">Sales Revenue</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-danger text-white shadow-sm border-0 rounded-4 h-100 card-hover">
-            <div class="card-body p-4 position-relative overflow-hidden">
-                <i class="bi bi-cart-dash position-absolute opacity-25" style="font-size: 5rem; right: -10px; bottom: -20px;"></i>
-                <h6 class="card-title fw-semibold opacity-75 text-uppercase letter-spacing-1 mb-2">Total Expenses</h6>
-                <h2 class="display-6 fw-bold mb-0">₹{{ "%.2f"|format(expense) }}</h2>
-                <div class="mt-3 small opacity-75"><i class="bi bi-arrow-down-circle"></i> Medical, Feed & Overhead</div>
-            </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #e53935, #b71c1c);">
+            <i class="bi bi-wallet2 stat-icon text-white-50"></i>
+            <div class="stat-label text-white-50">Total Expenses</div>
+            <div class="stat-value text-white">₹{{ "%.2f"|format(expense) }}</div>
+            <div class="stat-sub text-white-50">Fixed & Variable Costs</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card bg-primary text-white shadow-sm border-0 rounded-4 h-100 card-hover">
-            <div class="card-body p-4 position-relative overflow-hidden">
-                <i class="bi bi-piggy-bank position-absolute opacity-25" style="font-size: 5rem; right: -10px; bottom: -20px;"></i>
-                <h6 class="card-title fw-semibold opacity-75 text-uppercase letter-spacing-1 mb-2">Overall Farm Profit</h6>
-                <h2 class="display-6 fw-bold mb-0">₹{{ "%.2f"|format(profit) }}</h2>
-                <div class="mt-3 small fw-bold text-white"><i class="bi bi-graph-up-arrow"></i> Aggregate Net Profit</div>
+        <div class="stat-card" style="background: linear-gradient(135deg, {% if profit >= 0 %}#1e88e5, #0d47a1{% else %}#fb8c00, #e65100{% endif %});">
+            <i class="bi bi-graph-{% if profit >= 0 %}up{% else %}down{% endif %} stat-icon text-white-50"></i>
+            <div class="stat-label text-white-50">Net Profit / Loss</div>
+            <div class="stat-value text-white">₹{{ "%.2f"|format(profit) }}</div>
+            <div class="stat-sub text-white-50">Financial Balance</div>
+        </div>
+    </div>
+</div>
+
+{% if searched_goat %}
+<div class="row mb-5">
+    <div class="col-12">
+        {% set goat = searched_goat %}
+        {% include 'goat_profile_card.html' %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-2 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-table me-2 text-success"></i>Goat Directory</h5>
+                <form action="{{ url_for('dashboard') }}" method="GET" class="d-flex w-50">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control border-0 bg-light" placeholder="Search by Tag No or Breed..." value="{{ search_q }}">
+                        <button class="btn btn-success" type="submit">Search</button>
+                    </div>
+                </form>
             </div>
-        </div>
-    </div>
-</div>
-
-<h4 class="fw-bold mb-4 border-bottom pb-2">📋 Quick Links by Category</h4>
-
-<!-- Goat Management Section -->
-<div class="mb-4">
-    <h6 class="fw-bold text-dark mb-3 ps-1"><i class="bi bi-tags"></i> Goat Management</h6>
-    <div class="row g-2 mb-4">
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('goats') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-tags text-primary fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Goat Directory</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">All goats & records</small>
-                    </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tag No</th>
+                                <th>Breed</th>
+                                <th>Gender</th>
+                                <th>Weight</th>
+                                <th>Purchase Date</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for g in goats %}
+                            <tr>
+                                <td><span class="badge bg-success-subtle text-success border border-success border-opacity-10">{{ g.tag_no }}</span></td>
+                                <td>{{ g.breed or 'N/A' }}</td>
+                                <td>
+                                    {% if g.gender == 'Male' %}
+                                        <span class="text-primary"><i class="bi bi-gender-male me-1"></i>Male</span>
+                                    {% else %}
+                                        <span class="text-danger"><i class="bi bi-gender-female me-1"></i>Female</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ g.weight_kg }} kg</td>
+                                <td>{{ g.purchase_date }}</td>
+                                <td>
+                                    {% if g.status == 'Active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% elif g.status == 'Sold' %}
+                                        <span class="badge bg-warning text-dark">Sold</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ g.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('goat_detail', tag_number=g.tag_no) }}" class="btn btn-sm btn-outline-success">View Profile</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-search d-block mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                                    No goats found matching your search.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            </a>
-        </div>
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('master') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-book text-info fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Master Register</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Complete goat info</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('kid') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-heart text-danger fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Kid Details</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Offspring tracking</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Health & Medical Section -->
-<div class="mb-4">
-    <h6 class="fw-bold text-dark mb-3 ps-1"><i class="bi bi-heart-pulse"></i> Health & Medical</h6>
-    <div class="row g-2 mb-4">
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('health') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-syringe text-danger fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Vaccine Records</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">& Doctor details</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('medicine') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-capsule text-success fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Medicine Log</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Log & Track</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('mortality') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-exclamation-triangle text-warning fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Mortality Log</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Records</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Financial Section -->
-<div class="mb-4">
-    <h6 class="fw-bold text-dark mb-3 ps-1"><i class="bi bi-cash-flow"></i> Financial</h6>
-    <div class="row g-2 mb-4">
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('sales') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-cash-coin text-warning fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Sales Records</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Records</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('purchases') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-bag text-secondary fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Purchases</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Expenses</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Operations Section -->
-<div class="mb-4">
-    <h6 class="fw-bold text-dark mb-3 ps-1"><i class="bi bi-box-seam"></i> Operations</h6>
-    <div class="row g-2 mb-4">
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('feed') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-boxes text-success fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Feed Inventory</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Stock & Costs</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-6 col-lg-4">
-            <a href="{{ url_for('farm_settings') }}" class="text-decoration-none d-block h-100">
-                <div class="card quick-link-card border-0 shadow-sm rounded-3 h-100">
-                    <div class="card-body p-2 text-center">
-                        <div class="icon-wrapper mb-2">
-                            <i class="bi bi-gear text-info fs-5"></i>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">Farm Settings</h6>
-                        <small class="text-muted" style="font-size: 0.85rem;">Configuration</small>
-                    </div>
-                </div>
-            </a>
+            </div>
         </div>
     </div>
 </div>

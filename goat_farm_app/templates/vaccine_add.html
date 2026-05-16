@@ -1,86 +1,76 @@
 {% extends 'layout.html' %}
+
+{% block page_title %}Add Vaccine Record{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark mb-0"><i class="bi bi-capsule text-primary"></i> Add Vaccine Record</h2>
-    <a href="{{ url_for('vaccine') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back to Vaccines</a>
+<div class="page-header mb-4">
+    <h2 class="fw-800 text-dark mb-1">Add Vaccine Record</h2>
+    <p class="text-muted mb-0">Record a new vaccination for a goat.</p>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4">
-                <form method="POST" action="{{ url_for('vaccine_add') }}">
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">Goat Information</h5>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="sr_no" class="form-label fw-semibold">Serial Number</label>
-                            <input type="text" class="form-control" id="sr_no" name="sr_no" placeholder="Enter SR No">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="tag_no" class="form-label fw-semibold">Tag Number <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="tag_no" name="tag_no" required placeholder="Enter goat tag number">
-                        </div>
-                    </div>
-
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">Vaccine Details</h5>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="vaccine_date" class="form-label fw-semibold">Vaccination Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="vaccine_date" name="vaccine_date" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="vaccine_name" class="form-label fw-semibold">Vaccine Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="vaccine_name" name="vaccine_name" required placeholder="e.g., PPR, HS, Brucella">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="amount_spent" class="form-label fw-semibold">Amount Spent (₹)</label>
-                        <input type="number" class="form-control" id="amount_spent" name="amount_spent" step="0.01" placeholder="Enter amount spent">
-                    </div>
-
-                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2 mt-4">Additional & Required Items</h5>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="additional_vaccines" class="form-label fw-semibold">Additional Vaccines Used</label>
-                            <textarea class="form-control" id="additional_vaccines" name="additional_vaccines" rows="3" placeholder="List additional vaccines administered"></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="additional_medicines" class="form-label fw-semibold">Additional Medicines Used</label>
-                            <textarea class="form-control" id="additional_medicines" name="additional_medicines" rows="3" placeholder="List additional medicines administered"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="required_vaccines" class="form-label fw-semibold">Required Vaccines</label>
-                            <textarea class="form-control" id="required_vaccines" name="required_vaccines" rows="3" placeholder="Vaccines required for future"></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="required_medicines" class="form-label fw-semibold">Required Medicines</label>
-                            <textarea class="form-control" id="required_medicines" name="required_medicines" rows="3" placeholder="Medicines required for future"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="notes" class="form-label fw-semibold">Additional Notes</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional observations or notes"></textarea>
-                    </div>
-
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg fw-bold">
-                            <i class="bi bi-check-circle"></i> Save Vaccine Record
-                        </button>
-                        <a href="{{ url_for('vaccine') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancel
-                        </a>
-                    </div>
-                </form>
+<div class="card border-0">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('vaccine_add') }}" class="row g-4">
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">SERIAL NUMBER</label>
+                <input type="text" name="sr_no" class="form-control" placeholder="Optional SR No">
             </div>
-        </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">GOAT TAG NUMBER <span class="text-danger">*</span></label>
+                <input type="text" name="tag_no" class="form-control" list="goatTags" required placeholder="Select or type tag number">
+                <datalist id="goatTags">
+                    {% for goat in goats %}
+                    <option value="{{ goat.tag_no }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">VACCINE DATE <span class="text-danger">*</span></label>
+                <input type="date" name="vaccine_date" class="form-control" required id="todayDate">
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">VACCINE NAME <span class="text-danger">*</span></label>
+                <input type="text" name="vaccine_name" class="form-control" required placeholder="e.g. FMD, PPR">
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">COST (₹) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" name="amount_spent" class="form-control" required placeholder="0.00">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">NEXT DUE DATE</label>
+                <input type="date" name="next_due_date" class="form-control">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">ADDITIONAL VACCINES</label>
+                <input type="text" name="additional_vaccines" class="form-control">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">ADDITIONAL MEDICINES</label>
+                <input type="text" name="additional_medicines" class="form-control">
+            </div>
+            
+            <div class="col-12">
+                <label class="form-label fw-bold small text-muted">NOTES / OBSERVATIONS</label>
+                <textarea name="notes" class="form-control" rows="3" placeholder="Any special instructions..."></textarea>
+            </div>
+            
+            <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-success px-5 py-2 fw-bold">Save Vaccine Record</button>
+                <a href="{{ url_for('vaccine') }}" class="btn btn-light px-4 py-2 ms-2">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
+
+<script>
+document.getElementById('todayDate').valueAsDate = new Date();
+</script>
 {% endblock %}

@@ -1,55 +1,109 @@
 {% extends 'layout.html' %}
+
+{% block page_title %}Add Kid Record{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold text-success mb-0"><i class="bi bi-plus-slash-minus"></i> Add Kid Details</h2>
-            <a href="{{ url_for('kid') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Kids Web</a>
-        </div>
-        
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4 p-md-5">
-                <form method="POST" action="{{ url_for('kid_add') }}">
-                    
-                    <h5 class="text-primary mb-3 border-bottom pb-2">Primary Identification</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3"><label class="form-label text-muted">S.NO</label><input type="text" class="form-control" name="s_no"></div>
-                        <div class="col-md-9"><label class="form-label text-muted">Kid ID *</label><input type="text" class="form-control border-primary" name="kid_id" required></div>
-                    </div>
+<div class="page-header mb-4">
+    <h2 class="fw-800 text-dark mb-1">Add Kid Record</h2>
+    <p class="text-muted mb-0">Record details of a new kid born on the farm.</p>
+</div>
 
-                    <h5 class="text-primary mb-3 border-bottom pb-2">Parentage</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6"><label class="form-label text-muted">Mother Tag ID</label><input type="text" class="form-control border-info" name="mother_id"></div>
-                        <div class="col-md-6"><label class="form-label text-muted">Father Tag ID</label><input type="text" class="form-control border-info" name="father_id"></div>
-                    </div>
-
-                    <h5 class="text-primary mb-3 border-bottom pb-2">Traits & Origin</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3"><label class="form-label text-muted">Breed</label><input type="text" class="form-control" name="breed"></div>
-                        <div class="col-md-3"><label class="form-label text-muted">Breed %</label><input type="text" class="form-control" name="breed_percent"></div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted">Gender</label>
-                            <select class="form-select" name="gender">
-                                <option value=""></option><option value="M">Male</option><option value="F">Female</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3"><label class="form-label text-muted">Color</label><input type="text" class="form-control" name="color"></div>
-                    </div>
-
-                    <h5 class="text-primary mb-3 border-bottom pb-2">Health & Age Information</h5>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3"><label class="form-label text-muted">Litter Size</label><input type="number" class="form-control" name="litter_size"></div>
-                        <div class="col-md-3"><label class="form-label text-muted">Birth Date</label><input type="date" class="form-control" name="birth_date"></div>
-                        <div class="col-md-3"><label class="form-label text-muted">Age-Month</label><input type="text" class="form-control" name="age_month" placeholder="e.g. 2.5"></div>
-                        <div class="col-md-3"><label class="form-label text-muted">Birth Weight (KGS)</label><input type="number" step="0.01" class="form-control" name="birth_weight"></div>
-                    </div>
-                    
-                    <div class="col-12 mt-4">
-                        <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm"><i class="bi bi-save2"></i> Save Kid Record</button>
-                    </div>
-                </form>
+<div class="card border-0">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('kid_add') }}" class="row g-4">
+            
+            <h5 class="text-success fw-bold border-bottom pb-2 mb-3">Basic Details</h5>
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">S.NO <span class="text-danger">*</span></label>
+                <input type="number" name="s_no" class="form-control" required placeholder="Serial No" value="{{ next_sr }}">
             </div>
-        </div>
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">KID ID <span class="text-danger">*</span></label>
+                <input type="text" name="kid_id" class="form-control" required placeholder="e.g. K-001">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">GENDER <span class="text-danger">*</span></label>
+                <select name="gender" class="form-select" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">BREED <span class="text-danger">*</span></label>
+                <input type="text" name="breed" class="form-control" required placeholder="e.g. Boer">
+            </div>
+            
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">BREED %</label>
+                <input type="text" name="breed_percent" class="form-control" placeholder="e.g. 100%, 75%">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">COLOR</label>
+                <input type="text" name="color" class="form-control" placeholder="e.g. White, Brown">
+            </div>
+            
+            <h5 class="text-success fw-bold border-bottom pb-2 mt-5 mb-3">Birth Details</h5>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">BIRTH DATE <span class="text-danger">*</span></label>
+                <input type="date" name="birth_date" class="form-control" required id="todayDate">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">AGE (MONTHS)</label>
+                <input type="number" step="0.1" name="age_month" class="form-control" placeholder="0">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">BIRTH WEIGHT (KG)</label>
+                <input type="number" step="0.01" name="birth_weight" class="form-control" placeholder="0.00">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">LITTER SIZE</label>
+                <input type="number" name="litter_size" class="form-control" placeholder="e.g. 1 (Single), 2 (Twins)">
+            </div>
+            
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">MOTHER ID</label>
+                <input type="text" name="mother_id" class="form-control" placeholder="Tag No of Mother">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-muted">FATHER ID</label>
+                <input type="text" name="father_id" class="form-control" placeholder="Tag No of Father">
+            </div>
+
+            <h5 class="text-success fw-bold border-bottom pb-2 mt-5 mb-3">Insurance Details (Optional)</h5>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">POLICY NUMBER</label>
+                <input type="text" name="insurance_policy_no" class="form-control" placeholder="Policy No">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">INSURANCE COMPANY</label>
+                <input type="text" name="insurance_company" class="form-control" placeholder="Company Name">
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">EXPIRY DATE</label>
+                <input type="date" name="insurance_expiry" class="form-control">
+            </div>
+            
+            <div class="col-12 mt-4 border-top pt-4">
+                <button type="submit" class="btn btn-success px-5 py-2 fw-bold">Save Kid Record</button>
+                <a href="{{ url_for('kid') }}" class="btn btn-light px-4 py-2 ms-2">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
+
+<script>
+document.getElementById('todayDate').valueAsDate = new Date();
+</script>
 {% endblock %}

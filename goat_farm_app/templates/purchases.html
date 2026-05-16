@@ -1,48 +1,167 @@
 {% extends 'layout.html' %}
+
+{% block page_title %}Purchase Dashboard{% endblock %}
+
 {% block content %}
-<div class='d-flex justify-content-between align-items-center mb-4'>
-    <h2 class='fw-bold text-dark mb-0'>Purchase Records</h2>
-    <a href='{{ url_for('purchase_add') }}' class='btn btn-success shadow-sm rounded-pill px-4'><i class='bi bi-plus-lg'></i> Add Purchase</a>
+<div class="page-header mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="fw-800 text-dark mb-1">Purchase Management</h2>
+        <p class="text-muted mb-0">Record and track purchases for the farm.</p>
+    </div>
 </div>
 
-<div class='card shadow-sm border-0 rounded-4 mb-4'>
-    <div class='card-body p-0'>
-        <div class='table-responsive'>
-            <table class='table table-hover align-middle mb-0'>
-                <thead class='table-light'>
-                    <tr>
-                        <th class='ps-4'>Date</th>
-                        <th>Seller Name</th>
-                        <th>Invoice</th>
-                        <th>Tag ID</th>
-                        <th>Price</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in records %}
-                    <tr>
-                        <td class='ps-4'>{{ r.purchase_date }}</td>
-                        <td>{{ r.seller_name }}</td>
-                        <td>{{ r.invoice_details }}</td>
-                        <td><span class='badge bg-light text-dark border'>{{ r.tag_id }}</span></td>
-                        <td class='fw-bold text-success'>₹{{ '%.2f'|format(r.price) }}</td>
-                        <td>
-                            <a href="{{ url_for('purchase_edit', id=r['id']) }}" class="btn btn-sm btn-warning me-2"><i class="bi bi-pencil"></i></a>
-                            <form method="POST" action="{{ url_for('purchase_delete', id=r['id']) }}" style="display:inline;" onclick="return confirm('Delete this record?');">
-                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan='6' class='text-center text-muted py-4'>No purchase records found.</td>
-                    </tr>
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <a href="{{ url_for('purchase_goat') }}" class="text-decoration-none">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white;">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-heptagon-half d-block mb-3" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <h5 class="fw-bold mb-0 text-white">Purchase Goat</h5>
+                    <div class="small text-white-50 mt-1">Auto-adds to directory</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('purchase_feed') }}" class="text-decoration-none">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #f57f17, #fbc02d); color: white;">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-box-seam d-block mb-3" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <h5 class="fw-bold mb-0 text-white">Purchase Feed</h5>
+                    <div class="small text-white-50 mt-1">Auto-updates inventory</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('purchase_medicine') }}" class="text-decoration-none">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #0288d1, #01579b); color: white;">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-capsule d-block mb-3" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <h5 class="fw-bold mb-0 text-white">Purchase Medicine</h5>
+                    <div class="small text-white-50 mt-1">Track medicine stock</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('purchase_vaccine') }}" class="text-decoration-none">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #7b1fa2, #4a148c); color: white;">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-shield-plus d-block mb-3" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <h5 class="fw-bold mb-0 text-white">Purchase Vaccine</h5>
+                    <div class="small text-white-50 mt-1">Track vaccine stock</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<h4 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-success"></i>Recent Activity</h4>
+
+<div class="row g-4">
+    <!-- Recent Goats -->
+    <div class="col-md-6">
+        <div class="card border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h6 class="fw-bold text-success mb-0">Recent Goat Purchases</h6>
+            </div>
+            <div class="card-body">
+                {% if goats %}
+                <ul class="list-group list-group-flush">
+                    {% for g in goats %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <span class="fw-bold">{{ g.tag_id }}</span>
+                            <div class="small text-muted">{{ g.purchase_date }} | {{ g.seller_name }}</div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success">₹{{ g.price }}</span>
+                    </li>
                     {% endfor %}
-                </tbody>
-            </table>
+                </ul>
+                {% else %}
+                <div class="text-muted small text-center py-3">No recent goat purchases.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Feed -->
+    <div class="col-md-6">
+        <div class="card border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h6 class="fw-bold text-warning mb-0">Recent Feed Purchases</h6>
+            </div>
+            <div class="card-body">
+                {% if feed %}
+                <ul class="list-group list-group-flush">
+                    {% for f in feed %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <span class="fw-bold">{{ f.feed_name }}</span>
+                            <div class="small text-muted">{{ f.purchase_date }} | Qty: {{ f.quantity }} {{ f.unit }}</div>
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning">₹{{ f.cost }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-muted small text-center py-3">No recent feed purchases.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Medicine -->
+    <div class="col-md-6">
+        <div class="card border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h6 class="fw-bold text-info mb-0">Recent Medicine Purchases</h6>
+            </div>
+            <div class="card-body">
+                {% if meds %}
+                <ul class="list-group list-group-flush">
+                    {% for m in meds %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <span class="fw-bold">{{ m.medicine_name }}</span>
+                            <div class="small text-muted">{{ m.purchase_date }} | Qty: {{ m.quantity }} {{ m.dose_unit }}</div>
+                        </div>
+                        <span class="badge bg-info-subtle text-info">₹{{ m.cost }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-muted small text-center py-3">No recent medicine purchases.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Vaccines -->
+    <div class="col-md-6">
+        <div class="card border-0 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h6 class="fw-bold" style="color: #7b1fa2;">Recent Vaccine Purchases</h6>
+            </div>
+            <div class="card-body">
+                {% if vacs %}
+                <ul class="list-group list-group-flush">
+                    {% for v in vacs %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <span class="fw-bold">{{ v.vaccine_name }}</span>
+                            <div class="small text-muted">{{ v.purchase_date }} | Qty: {{ v.quantity }}</div>
+                        </div>
+                        <span class="badge" style="background: #f3e5f5; color: #7b1fa2;">₹{{ v.cost }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-muted small text-center py-3">No recent vaccine purchases.</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
-
