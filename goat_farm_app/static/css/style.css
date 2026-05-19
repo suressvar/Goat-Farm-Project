@@ -268,8 +268,10 @@ body {
 }
 .card:hover {
   transform: translateY(-5px);
-  background: #ffffff !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+}
+.card:not(.stat-card):not([style*="gradient"]):hover {
+  background: #ffffff !important;
 }
 
 /* ── Cards ── */
