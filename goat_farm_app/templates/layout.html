@@ -77,14 +77,14 @@
     </div>
 
     <!-- PURCHASE & SALES MENU -->
-    {% set sales_ep = ['sales','sales_add','sales_edit','purchases','purchase_add','purchase_edit','invoice','equipment_purchases'] %}
+    {% set sales_ep = ['sales','sales_add','sales_edit','purchases','purchase_add','purchase_edit','invoice','equipment_purchases','vouchers','voucher_goat','voucher_feed','voucher_medicine','voucher_vaccine','voucher_edit','feed_voucher_edit','med_voucher_edit','vac_voucher_edit'] %}
     <button class="nav-group-header {% if request.endpoint in sales_ep %}open{% endif %}" onclick="toggleGroup(this)">
       <span class="group-icon"><i class="bi bi-bag-check"></i></span> Purchase & Sales
       <span class="chevron"><i class="bi bi-chevron-right"></i></span>
     </button>
     <div class="nav-group-items {% if request.endpoint in sales_ep %}show{% endif %}">
       <a href="{{ url_for('sales') }}" class="sidebar-link {% if request.endpoint in ['sales','sales_add','sales_edit'] %}active{% endif %}"><span class="link-icon"><i class="bi bi-receipt"></i></span> Sales Records</a>
-      <a href="{{ url_for('purchases') }}" class="sidebar-link {% if request.endpoint in ['purchases','purchase_add','purchase_edit'] %}active{% endif %}"><span class="link-icon"><i class="bi bi-cart3"></i></span> Purchases</a>
+      <a href="{{ url_for('vouchers') }}" class="sidebar-link {% if request.endpoint in ['vouchers','voucher_goat','voucher_feed','voucher_medicine','voucher_vaccine','voucher_edit','feed_voucher_edit','med_voucher_edit','vac_voucher_edit'] %}active{% endif %}"><span class="link-icon"><i class="bi bi-file-earmark-check"></i></span> Vouchers</a>
       <a href="{{ url_for('generate_invoice') }}" class="sidebar-link {% if request.endpoint == 'generate_invoice' %}active{% endif %}"><span class="link-icon"><i class="bi bi-file-earmark-pdf"></i></span> Invoice Generator</a>
       <a href="{{ url_for('equipment_purchases') }}" class="sidebar-link {% if request.endpoint == 'equipment_purchases' %}active{% endif %}"><span class="link-icon"><i class="bi bi-cpu"></i></span> Equipment Purchases</a>
     </div>
@@ -144,9 +144,9 @@
   <button class="sidebar-toggle" onclick="toggleSidebar()">🐐</button>
   <div class="topbar-title">{% block page_title %}{% endblock %}</div>
   
-  <form action="{{ url_for('dashboard') }}" method="GET" class="topbar-search d-none d-md-flex">
+  <form action="{{ url_for('search') }}" method="GET" class="topbar-search d-none d-md-flex">
     <i class="bi bi-search text-muted"></i>
-    <input type="text" name="search" class="border-0 bg-transparent w-100" style="outline:none;" placeholder="Quick search tags or records..." value="{{ request.args.get('search', '') }}">
+    <input type="text" name="q" class="border-0 bg-transparent w-100" style="outline:none;" placeholder="Search by tag ID or last 3 digits..." value="{{ request.args.get('q', '') }}">
     <button type="submit" style="display:none;"></button>
   </form>
 

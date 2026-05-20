@@ -3,16 +3,49 @@
 {% block page_title %}Goat Directory{% endblock %}
 
 {% block content %}
-<div class="page-header mb-4">
+<div class="container my-4">
+  <form method="GET" action="{{ url_for('goats') }}" class="mb-4">
+    <div class="input-group">
+      <input type="text" name="tag_search" class="form-control" placeholder="Enter last 3 digits of Tag ID" value="{{ request.args.get('tag_search', '') }}">
+      <button class="btn btn-success" type="submit">Filter</button>
+    </div>
+  </form>
+<div class="page-header mb-4 d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div>
         <h2 class="fw-800 text-dark mb-1">Goat Directory</h2>
         <p class="text-muted mb-0">Overview of all registered goats and their financial status.</p>
     </div>
+    <form method="GET" action="{{ url_for('goats') }}" class="d-flex align-items-center gap-2" style="min-width: 280px;">
+        <div class="input-group shadow-sm rounded-3 overflow-hidden" style="border: 2px solid #e2e8f0;">
+            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" name="tag_search" class="form-control border-0 bg-white py-2" 
+                   placeholder="Search by last 3 digits..." 
+                   value="{{ tag_search }}" 
+                   style="outline: none; box-shadow: none; font-size: 0.95rem;"
+                   id="goat-tag-search">
+            {% if tag_search %}
+            <a href="{{ url_for('goats') }}" class="input-group-text bg-white border-0 text-danger" title="Clear search">
+                <i class="bi bi-x-circle-fill"></i>
+            </a>
+            {% endif %}
+            <button type="submit" class="btn btn-success px-3" style="border-radius: 0;">
+                <i class="bi bi-funnel-fill me-1"></i> Filter
+            </button>
+        </div>
+    </form>
 </div>
 
-<div class="row g-4">
+{% if tag_search %}
+<div class="alert alert-info border-0 shadow-sm rounded-3 d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-info-circle-fill fs-5"></i>
+    <span>Showing goats matching "<strong>{{ tag_search }}</strong>" &mdash; <strong>{{ goats|length }}</strong> result{{ 's' if goats|length != 1 else '' }} found.</span>
+    <a href="{{ url_for('goats') }}" class="btn btn-sm btn-outline-primary ms-auto">Show All</a>
+</div>
+{% endif %}
+
+<div class="row g-4" id="goat-cards">
     {% for goat in goats %}
-    <div class="col-md-4 col-xl-3">
+    <div class="col-md-4 col-xl-3 goat-card">
         <div class="card border-0 h-100 rounded-4">
             <div class="card-body text-center p-4">
                 <div class="mb-3 d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-4" style="width: 70px; height: 70px;">
@@ -37,12 +70,17 @@
         </div>
     </div>
     {% else %}
-    <div class="col-12 text-center py-5">
+    <div class="col-12 text-center py-5" id="no-results">
         <div class="mb-3">
             <i class="bi bi-info-circle text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
         </div>
+        {% if tag_search %}
+        <p class="text-muted fs-5">No goats found matching "{{ tag_search }}".</p>
+        <a href="{{ url_for('goats') }}" class="btn btn-success mt-2">Show All Goats</a>
+        {% else %}
         <p class="text-muted fs-5">No goats registered in the directory yet.</p>
         <a href="{{ url_for('master_add') }}" class="btn btn-success mt-2">Add First Goat</a>
+        {% endif %}
     </div>
     {% endfor %}
 </div>

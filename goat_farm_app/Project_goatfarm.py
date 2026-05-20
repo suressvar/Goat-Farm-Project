@@ -271,6 +271,49 @@ def init_db():
                 notes TEXT
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS vouchers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seller_name TEXT NOT NULL,
+                invoice_details TEXT,
+                purchase_date DATE NOT NULL,
+                tag_id TEXT NOT NULL,
+                price REAL NOT NULL
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS feed_vouchers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                feed_name TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                unit TEXT,
+                cost REAL NOT NULL,
+                purchase_date DATE NOT NULL,
+                supplier TEXT
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS medicine_vouchers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                medicine_name TEXT NOT NULL,
+                dose_unit TEXT,
+                quantity REAL NOT NULL,
+                cost REAL NOT NULL,
+                purchase_date DATE NOT NULL,
+                supplier TEXT
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS vaccine_vouchers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vaccine_name TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                cost REAL NOT NULL,
+                purchase_date DATE NOT NULL,
+                supplier TEXT
+            )
+        ''')
+        add_column("feed_inventory", "voucher_id", "INTEGER")
         # Check if admin user exists
         user = conn.execute('SELECT * FROM users WHERE username = ?', ('admin',)).fetchone()
         if not user:
@@ -393,12 +436,17 @@ def dashboard():
     exp_med = db.execute("SELECT SUM(cost) FROM medicine_purchases").fetchone()[0] or 0.0
     exp_vac = db.execute("SELECT SUM(cost) FROM vaccine_purchases").fetchone()[0] or 0.0
     
+    # Vouchers
+    exp_goat_v = db.execute("SELECT SUM(price) FROM vouchers").fetchone()[0] or 0.0
+    exp_med_v = db.execute("SELECT SUM(cost) FROM medicine_vouchers").fetchone()[0] or 0.0
+    exp_vac_v = db.execute("SELECT SUM(cost) FROM vaccine_vouchers").fetchone()[0] or 0.0
+    
     # 2. Operations (Maintenance + Salaries + General Expenses)
     exp_salary = db.execute("SELECT SUM(net_salary) FROM salary_payments").fetchone()[0] or 0.0
     exp_maint = db.execute("SELECT SUM(service_cost) FROM equipment_services").fetchone()[0] or 0.0
     exp_gen = db.execute("SELECT SUM(amount) FROM expenses WHERE status='Approved'").fetchone()[0] or 0.0
     
-    expense = exp_goat + exp_feed + exp_med + exp_vac + exp_salary + exp_maint + exp_gen
+    expense = exp_goat + exp_feed + exp_med + exp_vac + exp_salary + exp_maint + exp_gen + exp_goat_v + exp_med_v + exp_vac_v
     profit = income - expense
     
     # 2. Goat Search Logic
@@ -407,7 +455,13 @@ def dashboard():
         # Check for exact tag match first
         searched_goat = db.execute("SELECT * FROM master_records WHERE tag_no = ?", (search_q.strip(),)).fetchone()
         
-        # General list search
+        # If no exact match, try suffix match (e.g. last 3 digits)
+        if not searched_goat:
+            suffix_matches = db.execute("SELECT * FROM master_records WHERE tag_no LIKE ?", (f"%{search_q.strip()}",)).fetchall()
+            if len(suffix_matches) == 1:
+                searched_goat = suffix_matches[0]
+        
+        # General list search (also uses suffix match)
         goats = db.execute("SELECT * FROM master_records WHERE tag_no LIKE ? OR breed LIKE ? ORDER BY id ASC", 
                           (f"%{search_q}%", f"%{search_q}%")).fetchall()
     else:
@@ -522,9 +576,17 @@ def delete_record(id):
 @app.route('/goats')
 def goats():
     db = get_db()
+    tag_search = request.args.get('tag_search', '').strip()
+    
+    # Build WHERE clause for partial tag search (e.g. last 3 digits)
+    tag_filter = ''
+    params = []
+    if tag_search:
+        tag_filter = 'WHERE m.tag_no LIKE ?'
+        params = [f'%{tag_search}']
     
     # Get all goats from master records and their financial summary
-    goats_summary = db.execute('''
+    goats_summary = db.execute(f'''
         WITH AllRecords AS (
             SELECT tag_number as tag_no, date, category, amount FROM goats_data
             UNION ALL
@@ -544,11 +606,12 @@ def goats():
                IFNULL(SUM(CASE WHEN a.category = 'expense' THEN a.amount ELSE 0 END), 0) as total_expense
         FROM master_records m
         LEFT JOIN AllRecords a ON m.tag_no = a.tag_no
+        {tag_filter}
         GROUP BY m.tag_no
         ORDER BY CAST(m.tag_no AS INTEGER) ASC
-    ''').fetchall()
+    ''', params).fetchall()
     
-    return render_template('goats.html', goats=goats_summary)
+    return render_template('goats.html', goats=goats_summary, tag_search=tag_search)
 
 @app.route('/goat/<tag_number>')
 def goat_detail(tag_number):
@@ -1272,7 +1335,13 @@ def search():
     
     if tag_master or tag_goats:
         return redirect(url_for('goat_detail', tag_number=query))
-        
+    
+    # Partial match: search by last digits (suffix match)
+    partial_matches = db.execute("SELECT tag_no FROM master_records WHERE tag_no LIKE ?", (f'%{query}',)).fetchall()
+    if partial_matches:
+        # Show filtered goats directory (cards) for all matches
+        return redirect(url_for('goats', tag_search=query))
+    
     flash(f"No records found for '{query}'", 'info')
     return redirect(url_for('dashboard'))
 @app.route('/purchases')
@@ -1455,6 +1524,239 @@ def vac_purchase_delete(id):
     db.commit()
     flash('Vaccine purchase deleted!', 'success')
     return redirect(url_for('purchases'))
+
+@app.route('/vouchers')
+def vouchers():
+    db = get_db()
+    # Fetch recent vouchers across all 4 categories for the dashboard
+    recent_goats = db.execute('SELECT * FROM vouchers ORDER BY purchase_date DESC LIMIT 5').fetchall()
+    recent_feed = db.execute('SELECT * FROM feed_vouchers ORDER BY purchase_date DESC LIMIT 5').fetchall()
+    recent_meds = db.execute('SELECT * FROM medicine_vouchers ORDER BY purchase_date DESC LIMIT 5').fetchall()
+    recent_vacs = db.execute('SELECT * FROM vaccine_vouchers ORDER BY purchase_date DESC LIMIT 5').fetchall()
+    return render_template('vouchers.html', goats=recent_goats, feed=recent_feed, meds=recent_meds, vacs=recent_vacs)
+
+@app.route('/voucher_goat', methods=['GET', 'POST'])
+def voucher_goat():
+    if request.method == 'POST':
+        f = request.form
+        db = get_db()
+        tag_id = f.get('tag_id')
+        
+        # 1. Add to vouchers
+        db.execute('''
+            INSERT INTO vouchers (
+                seller_name, invoice_details, purchase_date, tag_id, price
+            ) VALUES (?, ?, ?, ?, ?)
+        ''', (
+            f.get('seller_name'), f.get('invoice_details'), f.get('purchase_date'), 
+            tag_id, f.get('price')
+        ))
+        
+        # 2. Auto-add to master_records
+        breed = f.get('breed', 'Unknown')
+        gender = f.get('gender', 'Unknown')
+        weight = f.get('weight', 0)
+        
+        db.execute('''
+            INSERT INTO master_records (
+                tag_no, breed, gender, purchase_date, weight_kg, purchase_amount, status
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Active')
+        ''', (tag_id, breed, gender, f.get('purchase_date'), weight, f.get('price')))
+        
+        db.commit()
+        flash('Goat voucher added and Master Records updated successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('voucher_goat.html')
+
+@app.route('/voucher_feed', methods=['GET', 'POST'])
+def voucher_feed():
+    if request.method == 'POST':
+        f = request.form
+        db = get_db()
+        qty = float(f.get('quantity') or 0)
+        cost = float(f.get('cost') or 0)
+        feed_name = f.get('feed_name')
+        
+        # 1. Log voucher
+        cursor = db.execute('''
+            INSERT INTO feed_vouchers (
+                feed_name, quantity, unit, cost, purchase_date, supplier
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            feed_name, qty, f.get('unit'), cost, f.get('purchase_date'), f.get('supplier')
+        ))
+        voucher_id = cursor.lastrowid
+        
+        # 2. Update feed inventory
+        today = f.get('purchase_date')
+        
+        db.execute('''
+            INSERT INTO feed_inventory (feed_name, purchased_qty, closing_stock, total_cost, purchase_date, voucher_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (feed_name, qty, qty, cost, today, voucher_id))
+            
+        db.commit()
+        flash('Feed voucher added and inventory updated!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('voucher_feed.html')
+
+@app.route('/voucher_medicine', methods=['GET', 'POST'])
+def voucher_medicine():
+    if request.method == 'POST':
+        f = request.form
+        db = get_db()
+        db.execute('''
+            INSERT INTO medicine_vouchers (
+                medicine_name, dose_unit, quantity, cost, purchase_date, supplier
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        ''', (
+            f.get('medicine_name'), f.get('dose_unit'), f.get('quantity'), 
+            f.get('cost'), f.get('purchase_date'), f.get('supplier')
+        ))
+        db.commit()
+        flash('Medicine voucher added successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('voucher_medicine.html')
+
+@app.route('/voucher_vaccine', methods=['GET', 'POST'])
+def voucher_vaccine():
+    if request.method == 'POST':
+        f = request.form
+        db = get_db()
+        db.execute('''
+            INSERT INTO vaccine_vouchers (
+                vaccine_name, quantity, cost, purchase_date, supplier
+            ) VALUES (?, ?, ?, ?, ?)
+        ''', (
+            f.get('vaccine_name'), f.get('quantity'), f.get('cost'), 
+            f.get('purchase_date'), f.get('supplier')
+        ))
+        db.commit()
+        flash('Vaccine voucher added successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('voucher_vaccine.html')
+
+@app.route('/feed_voucher_edit/<int:id>', methods=['GET', 'POST'])
+def feed_voucher_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM feed_vouchers WHERE id = ?', (id,)).fetchone()
+    if request.method == 'POST':
+        f = request.form
+        db.execute('''UPDATE feed_vouchers SET feed_name=?, quantity=?, unit=?, cost=?, purchase_date=?, supplier=? WHERE id=?''',
+            (f.get('feed_name'), f.get('quantity'), f.get('unit'), f.get('cost'), f.get('purchase_date'), f.get('supplier'), id))
+        
+        # Update linked inventory
+        db.execute('''UPDATE feed_inventory SET feed_name=?, purchased_qty=?, closing_stock=?, total_cost=?, purchase_date=? WHERE voucher_id=?''',
+            (f.get('feed_name'), f.get('quantity'), f.get('quantity'), f.get('cost'), f.get('purchase_date'), id))
+        
+        db.commit()
+        flash('Feed voucher and Inventory updated successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('generic_voucher_edit.html', record=record, p_type='feed')
+
+@app.route('/feed_voucher_delete/<int:id>', methods=['POST'])
+def feed_voucher_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM feed_vouchers WHERE id = ?', (id,))
+    # Also delete linked inventory
+    db.execute('DELETE FROM feed_inventory WHERE voucher_id = ?', (id,))
+    db.commit()
+    flash('Feed voucher and linked Inventory record deleted!', 'success')
+    return redirect(url_for('vouchers'))
+
+@app.route('/med_voucher_edit/<int:id>', methods=['GET', 'POST'])
+def med_voucher_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM medicine_vouchers WHERE id = ?', (id,)).fetchone()
+    if request.method == 'POST':
+        f = request.form
+        db.execute('''UPDATE medicine_vouchers SET medicine_name=?, dose_unit=?, quantity=?, cost=?, purchase_date=?, supplier=? WHERE id=?''',
+            (f.get('medicine_name'), f.get('dose_unit'), f.get('quantity'), f.get('cost'), f.get('purchase_date'), f.get('supplier'), id))
+        db.commit()
+        flash('Medicine voucher updated successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('generic_voucher_edit.html', record=record, p_type='med')
+
+@app.route('/med_voucher_delete/<int:id>', methods=['POST'])
+def med_voucher_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM medicine_vouchers WHERE id = ?', (id,))
+    db.commit()
+    flash('Medicine voucher deleted!', 'success')
+    return redirect(url_for('vouchers'))
+
+@app.route('/vac_voucher_edit/<int:id>', methods=['GET', 'POST'])
+def vac_voucher_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM vaccine_vouchers WHERE id = ?', (id,)).fetchone()
+    if request.method == 'POST':
+        f = request.form
+        db.execute('''UPDATE vaccine_vouchers SET vaccine_name=?, quantity=?, cost=?, purchase_date=?, supplier=? WHERE id=?''',
+            (f.get('vaccine_name'), f.get('quantity'), f.get('cost'), f.get('purchase_date'), f.get('supplier'), id))
+        db.commit()
+        flash('Vaccine voucher updated successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    return render_template('generic_voucher_edit.html', record=record, p_type='vac')
+
+@app.route('/vac_voucher_delete/<int:id>', methods=['POST'])
+def vac_voucher_delete(id):
+    db = get_db()
+    db.execute('DELETE FROM vaccine_vouchers WHERE id = ?', (id,))
+    db.commit()
+    flash('Vaccine voucher deleted!', 'success')
+    return redirect(url_for('vouchers'))
+
+@app.route('/voucher_edit/<int:id>', methods=['GET', 'POST'])
+def voucher_edit(id):
+    db = get_db()
+    record = db.execute('SELECT * FROM vouchers WHERE id = ?', (id,)).fetchone()
+    
+    if not record:
+        flash('Record not found.', 'danger')
+        return redirect(url_for('vouchers'))
+    
+    if request.method == 'POST':
+        f = request.form
+        # Get old tag_id before update
+        old_record = db.execute('SELECT tag_id FROM vouchers WHERE id=?', (id,)).fetchone()
+        old_tag_id = old_record['tag_id'] if old_record else None
+        
+        db.execute('''
+            UPDATE vouchers SET 
+            seller_name = ?, invoice_details = ?, purchase_date = ?, tag_id = ?, price = ? WHERE id = ?
+        ''', (
+            f.get('seller_name'), f.get('invoice_details'), f.get('purchase_date'),
+            f.get('tag_id'), f.get('price'), id
+        ))
+        
+        # Update corresponding master record if it exists
+        if old_tag_id:
+            db.execute('''UPDATE master_records 
+                         SET tag_no=?, purchase_date=?, purchase_amount=? 
+                         WHERE tag_no=?''', 
+                      (f.get('tag_id'), f.get('purchase_date'), f.get('price'), old_tag_id))
+        
+        db.commit()
+        flash('Voucher record and Master Record updated successfully!', 'success')
+        return redirect(url_for('vouchers'))
+    
+    return render_template('voucher_edit.html', record=record)
+
+@app.route('/voucher_delete/<int:id>', methods=['POST'])
+def voucher_delete(id):
+    db = get_db()
+    # Get tag_id before deletion to clean up master_records
+    record = db.execute('SELECT tag_id FROM vouchers WHERE id=?', (id,)).fetchone()
+    if record:
+        tag_id = record['tag_id']
+        db.execute('DELETE FROM vouchers WHERE id = ?', (id,))
+        # Also remove from master_records to keep data clean
+        db.execute('DELETE FROM master_records WHERE tag_no = ?', (tag_id,))
+        db.commit()
+        flash('Voucher and corresponding Master Record deleted successfully!', 'success')
+    else:
+        flash('Record not found.', 'danger')
+    return redirect(url_for('vouchers'))
 
 @app.route('/farm_settings', methods=['GET', 'POST'])
 def farm_settings():
@@ -2251,8 +2553,14 @@ def pnl():
         
         # --- EXPENSES ---
         feed = db.execute('''SELECT SUM(total_cost) FROM feed_inventory WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
-        vet = db.execute('''SELECT SUM(cost) FROM medicine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
-        vaccine = db.execute('''SELECT SUM(cost) FROM vaccine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        
+        vet_p = db.execute('''SELECT SUM(cost) FROM medicine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vet_v = db.execute('''SELECT SUM(cost) FROM medicine_vouchers WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vet = vet_p + vet_v
+        
+        vac_p = db.execute('''SELECT SUM(cost) FROM vaccine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vac_v = db.execute('''SELECT SUM(cost) FROM vaccine_vouchers WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vaccine = vac_p + vac_v
         
         elec_water = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category='Electricity and Water' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
         transport = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND category='Transport' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
@@ -2503,8 +2811,15 @@ def pnl_report():
         gen_exp = db.execute('''SELECT SUM(amount) FROM expenses WHERE status='Approved' AND strftime('%Y-%m', date) = ?''', (ym,)).fetchone()[0] or 0
         goat_purchases = db.execute('''SELECT SUM(purchase_amount) FROM master_records WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
         feed_purchases = db.execute('''SELECT SUM(total_cost) FROM feed_inventory WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
-        med_purchases = db.execute('''SELECT SUM(cost) FROM medicine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
-        vac_purchases = db.execute('''SELECT SUM(cost) FROM vaccine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        
+        med_p = db.execute('''SELECT SUM(cost) FROM medicine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        med_v = db.execute('''SELECT SUM(cost) FROM medicine_vouchers WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        med_purchases = med_p + med_v
+        
+        vac_p = db.execute('''SELECT SUM(cost) FROM vaccine_purchases WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vac_v = db.execute('''SELECT SUM(cost) FROM vaccine_vouchers WHERE strftime('%Y-%m', purchase_date) = ?''', (ym,)).fetchone()[0] or 0
+        vac_purchases = vac_p + vac_v
+        
         maint = db.execute('''SELECT SUM(service_cost) FROM equipment_services WHERE strftime('%Y-%m', service_date) = ?''', (ym,)).fetchone()[0] or 0
         salaries = db.execute('''SELECT SUM(net_salary) FROM salary_payments WHERE year = ? AND month = ?''', (year, int(m))).fetchone()[0] or 0
         
