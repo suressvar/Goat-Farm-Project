@@ -4,8 +4,8 @@
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h2><i class="fas fa-user-circle"></i> {{ employee.name }}</h2>
-            <p class="text-muted">{{ employee.role }} | Joined: {{ employee.join_date }}</p>
+            <h2><i class="fas fa-user-circle"></i> {{ employee.name }} - {{ employee.employee_id }}</h2>
+            <p class="text-muted">{{ employee.role }} | Joined: {{ employee.joining_date }}</p>
         </div>
         <div class="col-md-4 text-end">
             <a href="{{ url_for('employee_edit', emp_id=employee.id) }}" class="btn btn-warning">
@@ -27,6 +27,10 @@
                 <div class="card-body">
                     <table class="table table-borderless table-sm">
                         <tr>
+                            <td><strong>Employee ID:</strong></td>
+                            <td>{{ employee.employee_id }}</td>
+                        </tr>
+                        <tr>
                             <td><strong>Name:</strong></td>
                             <td>{{ employee.name }}</td>
                         </tr>
@@ -39,12 +43,12 @@
                             <td><span class="badge bg-info">{{ employee.role }}</span></td>
                         </tr>
                         <tr>
-                            <td><strong>Join Date:</strong></td>
-                            <td>{{ employee.join_date }}</td>
+                            <td><strong>Joining Date:</strong></td>
+                            <td>{{ employee.joining_date }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Wage:</strong></td>
-                            <td>₹{{ employee.wage_rate }} ({{ employee.wage_type }})</td>
+                            <td><strong>Shift:</strong></td>
+                            <td>{{ employee.shift_timing or '-' }}</td>
                         </tr>
                         <tr>
                             <td><strong>Status:</strong></td>
@@ -52,7 +56,7 @@
                                 {% if employee.status == 'Active' %}
                                 <span class="badge bg-success">Active</span>
                                 {% else %}
-                                <span class="badge bg-secondary">{{ employee.status }}</span>
+                                <span class="badge bg-secondary">Inactive</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -60,32 +64,6 @@
                             <td><strong>Address:</strong></td>
                             <td>{{ employee.address or '-' }}</td>
                         </tr>
-                        {% if employee.aadhar_no or employee.pan_no %}
-                        <tr class="border-top mt-2"><td colspan="2" class="pt-2 text-muted small fw-bold">IDENTITY DETAILS</td></tr>
-                        <tr>
-                            <td><strong>Aadhar:</strong></td>
-                            <td>{{ employee.aadhar_no or '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>PAN:</strong></td>
-                            <td>{{ employee.pan_no or '-' }}</td>
-                        </tr>
-                        {% endif %}
-                        {% if employee.bank_name or employee.account_no %}
-                        <tr class="border-top mt-2"><td colspan="2" class="pt-2 text-muted small fw-bold">BANK DETAILS</td></tr>
-                        <tr>
-                            <td><strong>Bank:</strong></td>
-                            <td>{{ employee.bank_name or '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Account:</strong></td>
-                            <td>{{ employee.account_no or '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td><strong>IFSC:</strong></td>
-                            <td>{{ employee.ifsc_code or '-' }}</td>
-                        </tr>
-                        {% endif %}
                     </table>
                 </div>
             </div>
@@ -142,7 +120,53 @@
         </div>
     </div>
 
-
+    <!-- Wages Card -->
+    {% if wages %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-money-bill"></i> Wage Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <td><strong>Daily Wage:</strong></td>
+                            <td>₹ {{ wages.daily_wage or '0' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Weekly Salary:</strong></td>
+                            <td>₹ {{ wages.weekly_salary or '0' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Monthly Salary:</strong></td>
+                            <td>₹ {{ wages.monthly_salary or '0' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Overtime Rate:</strong></td>
+                            <td>₹ {{ wages.overtime_rate or '0' }}/hour</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bonus:</strong></td>
+                            <td>₹ {{ wages.bonus or '0' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Advance Salary:</strong></td>
+                            <td>₹ {{ wages.advance_salary or '0' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pending Payment:</strong></td>
+                            <td class="text-danger"><strong>₹ {{ wages.pending_payment or '0' }}</strong></td>
+                        </tr>
+                    </table>
+                    <a href="{{ url_for('wages_edit', emp_id=employee.id) }}" class="btn btn-sm btn-outline-success w-100">
+                        <i class="fas fa-edit"></i> Edit Wages
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Recent Attendance -->
     <div class="row mb-4">
@@ -188,42 +212,7 @@
             </div>
         </div>
 
-        <!-- Payment History -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-money-check-alt"></i> Payment History</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Paid Date</th>
-                                <th>Period</th>
-                                <th>Amount</th>
-                                <th>Mode</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if payments %}
-                                {% for p in payments %}
-                                <tr>
-                                    <td>{{ p.paid_date }}</td>
-                                    <td>{{ p.month }}/{{ p.year }}</td>
-                                    <td class="text-success fw-bold">₹{{ p.net_salary }}</td>
-                                    <td>{{ p.payment_mode }}</td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-3">No payments recorded</td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <!-- Recent Leaves -->

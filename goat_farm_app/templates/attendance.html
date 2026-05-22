@@ -1,131 +1,123 @@
-{% extends 'layout.html' %}
-
-{% block page_title %}Employee Attendance{% endblock %}
+{% extends "layout.html" %}
 
 {% block content %}
-<div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-    <div>
-        <h2 class="fw-800 text-dark mb-1">Employee Attendance</h2>
-        <p class="text-muted mb-0">Mark and track daily attendance of farm staff.</p>
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3"><i class="fas fa-calendar-check"></i> Attendance Management</h1>
+        </div>
     </div>
-    <button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#markAttendanceModal">
-        <i class="bi bi-calendar-check me-2"></i>Mark Attendance
-    </button>
-</div>
 
-<!-- Filter Section -->
-<div class="card border-0 mb-4 shadow-sm rounded-4">
-    <div class="card-body">
-        <form method="GET" action="{{ url_for('attendance_view') }}" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Filter by Date</label>
-                <input type="date" name="date" class="form-control" value="{{ date_filter }}">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
-            </div>
-            <div class="col-md-2">
-                <a href="{{ url_for('attendance_view') }}" class="btn btn-light w-100">Clear</a>
-            </div>
-        </form>
+    <!-- Date Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-8">
+                    <input type="date" class="form-control" name="date" value="{{ date_filter }}" id="dateInput">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+            <small class="text-muted">Click below to add attendance for today</small>
+        </div>
     </div>
-</div>
 
-<!-- Attendance Records Table -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-    <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="bg-light text-muted small fw-bold">
-                <tr>
-                    <th class="ps-4">Employee</th>
-                    <th>Role</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Notes</th>
-                    <th class="text-end pe-4">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in records %}
-                <tr>
-                    <td class="ps-4">
-                        <div class="fw-bold text-dark">{{ record.name }}</div>
-                        <div class="small text-muted">ID: #{{ record.employee_id }}</div>
-                    </td>
-                    <td><span class="badge bg-light text-dark border">{{ record.role }}</span></td>
-                    <td>{{ record.date }}</td>
-                    <td>
-                        {% if record.status == 'Present' %}
-                            <span class="badge bg-success">Present</span>
-                        {% elif record.status == 'Half Day' %}
-                            <span class="badge bg-warning text-dark">Half Day</span>
-                        {% elif record.status == 'Absent' %}
-                            <span class="badge bg-danger">Absent</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ record.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td><span class="text-muted small">{{ record.notes or '-' }}</span></td>
-                    <td class="text-end pe-4">
-                        <!-- Add edit/delete buttons if necessary or leave blank -->
-                        <span class="text-muted small"><i class="bi bi-check2-all text-success"></i> Recorded</span>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">
-                        <i class="bi bi-calendar-x d-block mb-3" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                        No attendance records found{% if date_filter %} for {{ date_filter }}{% endif %}.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Quick Add Attendance -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-plus"></i> Mark Attendance</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('attendance_add') }}" class="row g-3">
+                <div class="col-md-4">
+                    <select class="form-select" name="employee_id" required>
+                        <option value="">Select Employee</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.id }}">{{ emp.employee_id }} - {{ emp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" class="form-control" name="date" id="todayDate" required>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="status" required>
+                        <option value="">Select Status</option>
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Leave">Leave</option>
+                        <option value="Half Day">Half Day</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-check"></i> Add
+                    </button>
+                </div>
+                <div class="col-md-12">
+                    <input type="text" class="form-control" name="notes" placeholder="Notes (optional)">
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<!-- Mark Attendance Modal -->
-<div class="modal fade" id="markAttendanceModal" tabindex="-1" aria-labelledby="markAttendanceModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="markAttendanceModalLabel">Mark Attendance</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" action="{{ url_for('attendance_add') }}" class="row g-3">
-                    <div class="col-12">
-                        <label class="form-label fw-bold small text-muted">EMPLOYEE <span class="text-danger">*</span></label>
-                        <select name="employee_id" class="form-select" required>
-                            <option value="">-- Select Employee --</option>
-                            {% for emp in employees %}
-                            <option value="{{ emp.id }}">{{ emp.name }} ({{ emp.role }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted">DATE <span class="text-danger">*</span></label>
-                        <input type="date" name="date" class="form-control" required value="{{ date_filter or '' }}">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted">STATUS <span class="text-danger">*</span></label>
-                        <select name="status" class="form-select" required>
-                            <option value="Present">Present</option>
-                            <option value="Half Day">Half Day</option>
-                            <option value="Absent">Absent</option>
-                            <option value="On Leave">On Leave</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label fw-bold small text-muted">NOTES</label>
-                        <input type="text" name="notes" class="form-control" placeholder="Optional notes...">
-                    </div>
-                    <div class="col-12 pt-3">
-                        <button type="submit" class="btn btn-success w-100 fw-bold">Save Attendance</button>
-                    </div>
-                </form>
-            </div>
+    <!-- Attendance Records -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Attendance Records</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if records %}
+                        {% for rec in records %}
+                        <tr>
+                            <td><strong>{{ rec.employee_id }}</strong></td>
+                            <td>{{ rec.name }}</td>
+                            <td>{{ rec.role }}</td>
+                            <td>{{ rec.date }}</td>
+                            <td>
+                                {% if rec.status == 'Present' %}
+                                <span class="badge bg-success">Present</span>
+                                {% elif rec.status == 'Absent' %}
+                                <span class="badge bg-danger">Absent</span>
+                                {% elif rec.status == 'Leave' %}
+                                <span class="badge bg-warning">Leave</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ rec.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ rec.notes or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox"></i> No attendance records found
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
+<script>
+// Set today's date as default
+document.getElementById('todayDate').valueAsDate = new Date();
+</script>
 {% endblock %}

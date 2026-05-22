@@ -140,4 +140,15 @@
     </div>
 </div>
 </div>
+
+<!-- High Weight Goat Notifications -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const highWeightGoats = {{ high_weight_goats|tojson }};
+        if (highWeightGoats && highWeightGoats.length > 0) {
+            displayHighWeightGoatNotifications(highWeightGoats);
+        }
+    });
+</script>
+
 {% endblock %}

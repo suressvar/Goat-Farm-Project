@@ -7,10 +7,23 @@
 
 <form class="row g-2 mb-3" method="get">
     <div class="col-md-3">
-        <input type="text" name="category" class="form-control" placeholder="Category" value="{{ category }}">
+        <select name="category" class="form-select">
+            <option value="">All Categories</option>
+            {% for c in categories %}
+            <option value="{{ c['category_name'] }}" {% if category==c['category_name'] %}selected{% endif %}>{{ c['category_name'] }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div class="col-md-2"><input type="date" name="start_date" value="{{ start_date }}" class="form-control"></div>
     <div class="col-md-2"><input type="date" name="end_date" value="{{ end_date }}" class="form-control"></div>
+    <div class="col-md-2">
+        <select name="status" class="form-select">
+            <option value="">All Status</option>
+            <option value="Pending" {% if status=='Pending' %}selected{% endif %}>Pending</option>
+            <option value="Approved" {% if status=='Approved' %}selected{% endif %}>Approved</option>
+            <option value="Rejected" {% if status=='Rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+    </div>
     <div class="col-md-3"><button class="btn btn-outline-primary">Filter</button></div>
 </form>
 
@@ -21,10 +34,10 @@
             <th>Category</th>
             <th>Amount</th>
             <th>Date</th>
-            <th>Vendor</th>
             <th>Payment</th>
-            <th>Receipt</th>
             <th>Status</th>
+            <th>Description</th>
+            <th>Attachment</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -32,18 +45,26 @@
         {% for r in records %}
         <tr>
             <td>{{ r['id'] }}</td>
-            <td>{{ r['category'] }}</td>
+            <td>{{ r['category_name'] }}</td>
             <td>{{ r['amount'] }}</td>
-            <td>{{ r['date'] }}</td>
-            <td>{{ r['vendor_name'] }}</td>
-            <td>{{ r['payment_mode'] }}</td>
-            <td>{{ r['receipt_no'] }}</td>
+            <td>{{ r['expense_date'] }}</td>
+            <td>{{ r['payment_method'] }}</td>
             <td>{{ r['status'] }}</td>
+            <td>{{ r['description'] }}</td>
+            <td>
+                {% if r['attachment_path'] %}
+                <a href="/{{ r['attachment_path'] }}" target="_blank">View</a>
+                {% endif %}
+            </td>
             <td>
                 {% if r['status']=='Pending' %}
                 <form action="{{ url_for('expense_approve', expense_id=r['id']) }}" method="post" class="d-inline">
                     <input type="hidden" name="action" value="approve">
                     <button class="btn btn-sm btn-success">Approve</button>
+                </form>
+                <form action="{{ url_for('expense_approve', expense_id=r['id']) }}" method="post" class="d-inline ms-1">
+                    <input type="hidden" name="action" value="reject">
+                    <button class="btn btn-sm btn-danger">Reject</button>
                 </form>
                 {% else %}
                 -

@@ -1,83 +1,90 @@
 {% extends 'layout.html' %}
-
-{% block page_title %}Equipment Inventory{% endblock %}
-
 {% block content %}
-<div class="page-header mb-4 d-flex justify-content-between align-items-center">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="fw-800 text-dark mb-1">Equipment Management</h2>
-        <p class="text-muted mb-0">Track farm machinery, tools, and maintenance schedules.</p>
+        <h2 class="fw-bold mb-0">Equipment Inventory</h2>
+        <p class="text-muted mb-0">Track equipment details, usage, cost, and service schedules.</p>
     </div>
-    <a href="{{ url_for('equipment_add') }}" class="btn btn-success shadow-sm"><i class="bi bi-tools me-2"></i>Add Equipment</a>
-</div>
-
-<div class="card border-0 mb-4">
-    <div class="card-body">
-        <form method="GET" action="{{ url_for('equipment') }}" class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label small fw-bold text-muted">Condition Status</label>
-                <select name="status" class="form-select border-0 bg-light">
-                    <option value="">All Statuses</option>
-                    <option value="Good" {% if status == 'Good' %}selected{% endif %}>Good</option>
-                    <option value="Needs Repair" {% if status == 'Needs Repair' %}selected{% endif %}>Needs Repair</option>
-                    <option value="Out of Service" {% if status == 'Out of Service' %}selected{% endif %}>Out of Service</option>
-                </select>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-success w-100">Apply Filter</button>
-            </div>
-        </form>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('supplier_add') }}" class="btn btn-outline-secondary">Add Supplier</a>
+        <a href="{{ url_for('equipment_add') }}" class="btn btn-success">Add Equipment</a>
     </div>
 </div>
 
-<div class="card border-0 overflow-hidden">
-    <div class="table-responsive">
-        <table class="table mb-0 align-middle">
-            <thead class="table-light text-muted small fw-bold">
-                <tr>
-                    <th>Equipment Name</th>
-                    <th>Purchase Details</th>
-                    <th>Status</th>
-                    <th>Supplier</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in records %}
-                <tr>
-                    <td>
-                        <div class="fw-bold">{{ record.name }}</div>
-                        <div class="small text-muted">{{ record.type or 'N/A' }}</div>
-                    </td>
-                    <td>
-                        <div>{{ record.purchase_date or 'N/A' }}</div>
-                        <div class="text-danger small">₹{{ record.purchase_cost or 0 }}</div>
-                    </td>
-                    <td>
-                        {% if record.status == 'Good' %}
-                            <span class="badge bg-success">Good</span>
-                        {% elif record.status == 'Needs Repair' %}
-                            <span class="badge bg-warning text-dark">Needs Repair</span>
-                        {% else %}
-                            <span class="badge bg-danger">Out of Service</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ record.supplier or 'N/A' }}</td>
-                    <td class="text-end">
-                        <a href="{{ url_for('equipment_detail', id=record.id) }}" class="btn btn-sm btn-outline-info">Details</a>
-                        <a href="{{ url_for('equipment_edit', id=record.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center py-5 text-muted">
-                        <i class="bi bi-tools d-block mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                        No equipment records found.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<form class="row g-2 mb-4" method="get">
+    <div class="col-md-3"><input type="text" name="assigned" value="{{ assigned }}" class="form-control" placeholder="Assigned employee"></div>
+    <div class="col-md-3">
+        <select name="category" class="form-select">
+            <option value="">All Categories</option>
+            {% for c in categories %}
+            <option value="{{ c['category_name'] }}" {% if category==c['category_name'] %}selected{% endif %}>{{ c['category_name'] }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">All Conditions</option>
+            <option value="Good" {% if status=='Good' %}selected{% endif %}>Good</option>
+            <option value="Fair" {% if status=='Fair' %}selected{% endif %}>Fair</option>
+            <option value="Needs Repair" {% if status=='Needs Repair' %}selected{% endif %}>Needs Repair</option>
+            <option value="Out of Service" {% if status=='Out of Service' %}selected{% endif %}>Out of Service</option>
+        </select>
+    </div>
+    <div class="col-md-3"><button class="btn btn-primary w-100">Filter</button></div>
+</form>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Equipment</th>
+                        <th>Category</th>
+                        <th>Vendor</th>
+                        <th>Purchase Date</th>
+                        <th>Cost</th>
+                        <th>Condition</th>
+                        <th>Assigned</th>
+                        <th>Last Used</th>
+                        <th>Service Due</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                    <tr>
+                        <td>{{ r['equipment_name'] }}</td>
+                        <td>{{ r['category_name'] or 'Unassigned' }}</td>
+                        <td>{{ r['vendor_name'] or 'N/A' }}</td>
+                        <td>{{ r['purchase_date'] or '-' }}</td>
+                        <td>₹{{ '%.2f'|format(r['purchase_cost'] or 0) }}</td>
+                        <td><span class="badge bg-{{ 'success' if r['condition_status']=='Good' else 'warning' if r['condition_status']=='Fair' else 'danger' }}">{{ r['condition_status'] }}</span></td>
+                        <td>{{ r['assigned_employee'] or '-' }}</td>
+                        <td>{{ r['last_used_date'] or '-' }}</td>
+                        <td>
+                            {% if r['service_due_alert'] %}
+                            <span class="badge bg-danger">Due</span>
+                            {% elif r['service_due_date'] %}
+                            <span class="badge bg-info">{{ r['service_due_date'] }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('equipment_detail', id=r['id']) }}" class="btn btn-sm btn-outline-primary">View</a>
+                            <a href="{{ url_for('equipment_edit', id=r['id']) }}" class="btn btn-sm btn-warning">Edit</a>
+                            <form method="POST" action="{{ url_for('equipment_delete', id=r['id']) }}" class="d-inline" onsubmit="return confirm('Delete this equipment record?');">
+                                <button class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" class="text-center text-muted py-4">No equipment records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

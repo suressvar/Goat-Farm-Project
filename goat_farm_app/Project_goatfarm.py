@@ -14,6 +14,17 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+def get_high_weight_goats(weight_threshold=25):
+    """Get all active goats that have reached or exceeded the weight threshold"""
+    db = get_db()
+    goats = db.execute("""
+        SELECT tag_no, weight_kg, color 
+        FROM master_records 
+        WHERE status = 'Active' AND weight_kg >= ? 
+        ORDER BY weight_kg DESC
+    """, (weight_threshold,)).fetchall()
+    return [dict(goat) for goat in goats]
+
 def init_db():
     with get_db() as conn:
         conn.execute('''
@@ -466,11 +477,14 @@ def dashboard():
                           (f"%{search_q}%", f"%{search_q}%")).fetchall()
     else:
         goats = db.execute("SELECT * FROM master_records ORDER BY id ASC LIMIT 10").fetchall()
+    
+    # 3. Get high weight goats (>= 25 kg) for notifications
+    high_weight_goats = get_high_weight_goats(weight_threshold=25)
         
     return render_template('dashboard.html', 
         income=income, expense=expense, profit=profit, 
         total_goats=total_goats, total_kids=total_kids, total_employees=total_employees,
-        goats=goats, search_q=search_q, searched_goat=searched_goat)
+        goats=goats, search_q=search_q, searched_goat=searched_goat, high_weight_goats=high_weight_goats)
 
 @app.route('/records')
 def records():
